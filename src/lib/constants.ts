@@ -39,18 +39,18 @@ export const COMPANY_TABS = [
 
 export const DASHBOARD_HIGHLIGHTS = [
   {
-    title: 'Inventory discipline',
-    description: 'Watch low-stock pressure before it becomes lost revenue.',
+    title: 'Track inventory',
+    description: 'Get alerts when stock runs low so you never miss a sale.',
     icon: Boxes,
   },
   {
-    title: 'Company visibility',
-    description: 'Compare activity across every company you manage.',
+    title: 'Manage companies',
+    description: 'View and compare activity across all your companies in one place.',
     icon: Building2,
   },
   {
-    title: 'Revenue insight',
-    description: 'Track sales momentum with live notifications and charts.',
+    title: 'Monitor sales',
+    description: 'See sales as they happen with live updates and charts.',
     icon: ChartNoAxesCombined,
   },
 ];

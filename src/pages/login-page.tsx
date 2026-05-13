@@ -21,8 +21,8 @@ export default function LoginPage() {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: 'admin@sunpulse.com',
-      password: 'Admin@123',
+      email: '',
+      password: '',
     },
   });
 
@@ -35,10 +35,10 @@ export default function LoginPage() {
 
     try {
       await signIn(values);
-      toast.success('Welcome back to SunPulse Inventory.');
+      toast.success('Welcome back!');
       navigate(location.state?.from?.pathname ?? '/', { replace: true });
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Unable to sign in.'));
+      toast.error(getErrorMessage(error, 'Invalid email or password.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -55,13 +55,13 @@ export default function LoginPage() {
             <AppLogo />
             <div className="mt-14 max-w-xl space-y-6">
               <p className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
-                Modern inventory operations
+                Smart inventory management
               </p>
               <h1 className="font-display text-5xl font-semibold leading-tight tracking-tight text-slate-950">
-                A polished command center for multi-company stock, sales, and notifications.
+                Manage your inventory with ease
               </h1>
               <p className="text-lg leading-8 text-muted-foreground">
-                Manage inventory with company-level security, real-time activity, and a layout designed to feel like a premium SaaS dashboard from day one.
+                Track stock, record sales, and stay updated with real-time notifications—all in one place.
               </p>
             </div>
 
@@ -72,10 +72,10 @@ export default function LoginPage() {
                     <ShieldCheck className="size-5" />
                   </div>
                   <h2 className="font-display text-xl font-semibold text-slate-950">
-                    Company-scoped security
+                    Secure access
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    RLS-backed access keeps members limited to their assigned company records.
+                    Your data is protected. Each team member only sees their assigned companies.
                   </p>
                 </CardContent>
               </Card>
@@ -85,10 +85,10 @@ export default function LoginPage() {
                     <LockKeyhole className="size-5" />
                   </div>
                   <h2 className="font-display text-xl font-semibold text-slate-950">
-                    Admin-controlled access
+                    Invite-only
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    No public signup. Admin creates users, memberships, and company workspaces securely.
+                    Your admin creates accounts and assigns team members to companies.
                   </p>
                 </CardContent>
               </Card>
@@ -101,34 +101,24 @@ export default function LoginPage() {
                 <AppLogo className="lg:hidden" />
                 <div className="mt-6 space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.35em] text-primary">
-                    Secure login
+                    Welcome back
                   </p>
                   <h2 className="font-display text-3xl font-semibold tracking-tight text-slate-950">
-                    Sign in to continue
+                    Sign in to your account
                   </h2>
                   <p className="text-sm leading-7 text-muted-foreground">
-                    Use the seeded admin account below after you run the Supabase setup.
+                    Enter your credentials to access your dashboard.
                   </p>
                 </div>
               </div>
 
               <CardContent className="space-y-6 p-8">
-                <div className="rounded-[1.5rem] border border-primary/10 bg-primary/5 p-4 text-sm text-slate-700">
-                  Demo admin credentials:
-                  {' '}
-                  <span className="font-semibold">admin@sunpulse.com</span>
-                  {' '}
-                  /
-                  {' '}
-                  <span className="font-semibold">Admin@123</span>
-                </div>
-
                 <form className="space-y-5" onSubmit={handleSubmit}>
                   <FormInput
                     error={form.formState.errors.email}
                     label="Email"
                     name="email"
-                    placeholder="admin@sunpulse.com"
+                    placeholder="your.email@company.com"
                     register={form.register}
                     type="email"
                   />
@@ -147,7 +137,7 @@ export default function LoginPage() {
                         Signing in...
                       </>
                     ) : (
-                      'Access dashboard'
+                      'Sign in'
                     )}
                   </Button>
                 </form>

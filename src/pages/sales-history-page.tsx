@@ -134,7 +134,7 @@ export default function SalesHistoryPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        description={`Track revenue, units sold, and product momentum for ${company?.name ?? 'this company'}.`}
+        description={`Track sales and revenue for ${company?.name ?? 'this company'}.`}
         eyebrow="Sales history"
         title={company?.name ?? 'Sales'}
         action={
@@ -153,28 +153,28 @@ export default function SalesHistoryPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          helper="Revenue captured in the filtered period."
+          helper="Total revenue from sales."
           icon={DollarSign}
           title="Revenue"
           value={formatCurrency(analytics.totalRevenue)}
         />
         <MetricCard
           accent="from-chart-2/15 via-white to-chart-2/5"
-          helper="Units sold across matching transactions."
+          helper="Total units sold."
           icon={ShoppingCart}
           title="Units sold"
           value={analytics.totalUnitsSold}
         />
         <MetricCard
           accent="from-chart-3/15 via-white to-chart-3/5"
-          helper="Number of completed sale records."
+          helper="Number of sales made."
           icon={ReceiptText}
           title="Transactions"
           value={analytics.totalTransactions}
         />
         <MetricCard
           accent="from-chart-4/15 via-white to-chart-4/5"
-          helper="Average value per transaction in the current view."
+          helper="Average sale value."
           icon={DollarSign}
           title="Avg. order value"
           value={formatCurrency(averageOrderValue)}
@@ -288,7 +288,7 @@ export default function SalesHistoryPage() {
           {sales.length === 0 ? (
             <EmptyState
               actionLabel="Record sale"
-              description="Create the first transaction to unlock charts, revenue trends, and notifications."
+              description="Record your first sale to see charts and trends."
               icon={ReceiptText}
               onAction={() => setSaleDialogOpen(true)}
               title="No sales match these filters"

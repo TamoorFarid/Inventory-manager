@@ -92,7 +92,7 @@ export default function CompaniesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        description="Create, refine, and review company workspaces with clean member and inventory boundaries."
+        description="View and manage all your company workspaces."
         eyebrow="Companies"
         title="Manage company workspaces"
         action={
@@ -115,7 +115,7 @@ export default function CompaniesPage() {
       ) : companies.length === 0 ? (
         <EmptyState
           actionLabel={profile?.role === 'admin' ? 'Create company' : undefined}
-          description="Start by creating a company to scope members, inventory, sales, and notifications."
+          description="Create your first company to get started."
           icon={Building2}
           onAction={
             profile?.role === 'admin'

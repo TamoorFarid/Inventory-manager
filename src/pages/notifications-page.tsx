@@ -100,9 +100,9 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        description="Stay on top of live sales activity and shared operational updates without refreshing the page."
+        description="See updates as they happen."
         eyebrow="Notifications"
-        title="Realtime activity feed"
+        title="Activity feed"
         action={
           <Button onClick={() => void handleMarkAll()} variant="outline">
             <CheckCheck className="size-4" />
@@ -117,21 +117,21 @@ export default function NotificationsPage() {
         <>
           <div className="grid gap-4 md:grid-cols-3">
             <MetricCard
-              helper="Notifications currently visible to you."
+              helper="All your notifications."
               icon={Bell}
               title="Total notifications"
               value={notifications.length}
             />
             <MetricCard
               accent="from-chart-2/15 via-white to-chart-2/5"
-              helper="Unread updates waiting for attention."
+              helper="Notifications you haven't read."
               icon={Bell}
               title="Unread"
               value={unreadCount}
             />
             <MetricCard
               accent="from-chart-3/15 via-white to-chart-3/5"
-              helper="Admin sees all company updates; members see only their own companies."
+              helper="Admins see all, members see their companies."
               icon={CheckCheck}
               title="Access model"
               value={profile?.role === 'admin' ? 'Global' : 'Scoped'}
@@ -155,7 +155,7 @@ export default function NotificationsPage() {
 
           {filteredNotifications.length === 0 ? (
             <EmptyState
-              description="When sales happen, the live feed will appear here instantly."
+              description="Notifications will appear here when sales are made."
               icon={Bell}
               title="No notifications in this view"
             />

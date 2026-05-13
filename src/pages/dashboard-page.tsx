@@ -109,7 +109,7 @@ export default function DashboardPage() {
       <PageHeader
         description={greeting}
         eyebrow="Dashboard"
-        title="Inventory control at a glance"
+        title="Your inventory overview"
         action={
           <Button asChild>
             <Link to="/companies">Open companies</Link>
@@ -127,28 +127,28 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               accent="from-primary/15 via-white to-primary/5"
-              helper="Total company workspaces you can access."
+              helper="Companies you have access to."
               icon={Building2}
               title="Companies"
               value={metrics.totalCompanies}
             />
             <MetricCard
               accent="from-chart-2/15 via-white to-chart-2/5"
-              helper="Current live product rows across your companies."
+              helper="Total products across all companies."
               icon={Boxes}
               title="Inventory items"
               value={metrics.totalInventoryItems}
             />
             <MetricCard
               accent="from-chart-3/20 via-white to-chart-3/5"
-              helper="Revenue booked from recorded sales."
+              helper="Total revenue from sales."
               icon={DollarSign}
               title="Revenue"
               value={formatCurrency(metrics.totalRevenue)}
             />
             <MetricCard
               accent="from-chart-4/20 via-white to-chart-4/5"
-              helper="Items that need restocking attention soon."
+              helper="Items running low on stock."
               icon={TriangleAlert}
               title="Low stock"
               value={metrics.lowStockItems}
@@ -158,7 +158,7 @@ export default function DashboardPage() {
           {companies.length === 0 ? (
             <EmptyState
               actionLabel={profile?.role === 'admin' ? 'Create your first company' : undefined}
-              description="Once companies are created and memberships are assigned, dashboard metrics and activity will appear here."
+              description="Your dashboard will show metrics once companies are set up."
               icon={Building2}
               onAction={undefined}
               title="No company workspaces yet"

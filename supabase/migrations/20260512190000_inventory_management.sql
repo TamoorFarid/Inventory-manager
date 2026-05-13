@@ -504,11 +504,11 @@ begin
     p_company_id,
     'Sale recorded',
     format(
-      '%s sold %s units of %s at %s each.',
+      '%s sold %s units of %s at Rs %s each.',
       coalesce(actor_name, 'A team member'),
       p_quantity_sold,
       target_item.title,
-      to_char(p_selling_price_per_unit, 'FM$999999990.00')
+      to_char(p_selling_price_per_unit, 'FM999999990.00')
     ),
     actor_id,
     actor_id
@@ -606,6 +606,42 @@ create trigger inventory_items_activity_log_trigger
 after insert or update on public.inventory_items
 for each row
 execute function private.capture_activity_log('inventory_item');
+
+create or replace function private.auto_add_creator_as_member()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  if tg_op = 'INSERT' and new.deleted_at is null then
+    insert into public.company_members (
+      company_id,
+      user_id,
+      added_by,
+      created_at,
+      updated_at
+    )
+    values (
+      new.id,
+      new.created_by,
+      new.created_by,
+      timezone('utc', now()),
+      timezone('utc', now())
+    )
+    on conflict (company_id, user_id) where deleted_at is null
+    do nothing;
+  end if;
+  
+  return new;
+end;
+$;
+
+drop trigger if exists companies_auto_add_creator_trigger on public.companies;
+create trigger companies_auto_add_creator_trigger
+after insert on public.companies
+for each row
+execute function private.auto_add_creator_as_member();
 
 alter table public.profiles enable row level security;
 alter table public.companies enable row level security;

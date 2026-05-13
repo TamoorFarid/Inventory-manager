@@ -141,7 +141,7 @@ export default function CompanyDetailPage() {
   if (!company) {
     return (
       <EmptyState
-        description="The requested company could not be loaded, or you do not have access to it."
+        description="This company is not available or you don't have access."
         icon={Building2}
         title="Company unavailable"
       />
@@ -151,7 +151,7 @@ export default function CompanyDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        description={company.description || 'This company workspace is ready for inventory, members, sales, and live notifications.'}
+        description={company.description || 'Manage inventory, members, and sales for this company.'}
         eyebrow="Company detail"
         title={company.name}
         action={
@@ -174,28 +174,28 @@ export default function CompanyDetailPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          helper="Active members assigned to this company."
+          helper="Team members in this company."
           icon={Users}
           title="Members"
           value={members.length}
         />
         <MetricCard
           accent="from-chart-2/15 via-white to-chart-2/5"
-          helper="Current product count for this workspace."
+          helper="Products in inventory."
           icon={Boxes}
           title="Inventory items"
           value={inventoryItems.length}
         />
         <MetricCard
           accent="from-chart-3/15 via-white to-chart-3/5"
-          helper="Revenue recorded through completed sales."
+          helper="Total revenue from sales."
           icon={DollarSign}
           title="Revenue"
           value={formatCurrency(revenue)}
         />
         <MetricCard
           accent="from-chart-4/15 via-white to-chart-4/5"
-          helper="Products that need replenishment soon."
+          helper="Products running low."
           icon={Clock3}
           title="Low stock items"
           value={lowStockItems}
@@ -284,7 +284,7 @@ export default function CompanyDetailPage() {
               {members.length === 0 ? (
                 <EmptyState
                   actionLabel={profile?.role === 'admin' ? 'Add member' : undefined}
-                  description="Invite the first teammate into this company workspace."
+                  description="Add your first team member."
                   icon={Users}
                   onAction={profile?.role === 'admin' ? () => setMemberDialogOpen(true) : undefined}
                   title="No members assigned yet"

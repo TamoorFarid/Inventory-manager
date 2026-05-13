@@ -9,7 +9,7 @@ export default function NotFoundPage() {
       <div className="w-full max-w-2xl">
         <EmptyState
           actionLabel="Back to dashboard"
-          description="The page you requested doesn’t exist or may have been moved."
+          description="This page does not exist."
           icon={Compass}
           onAction={() => {
             window.location.href = '/';

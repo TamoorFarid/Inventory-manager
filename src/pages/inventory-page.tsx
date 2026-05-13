@@ -159,7 +159,7 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        description={`Search, sort, and manage stock inside ${company?.name ?? 'this company'} with clear update ownership and low-stock visibility.`}
+        description={`Manage stock levels for ${company?.name ?? 'this company'}.`}
         eyebrow="Inventory"
         title={company?.name ?? 'Inventory'}
         action={
@@ -179,28 +179,28 @@ export default function InventoryPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          helper="Total distinct products in this company."
+          helper="Number of different products."
           icon={PackageSearch}
           title="Products"
           value={analytics.totalProducts}
         />
         <MetricCard
           accent="from-chart-2/15 via-white to-chart-2/5"
-          helper="Total units currently available in stock."
+          helper="Total units in stock."
           icon={List}
           title="Total stock"
           value={analytics.totalStock}
         />
         <MetricCard
           accent="from-chart-4/15 via-white to-chart-4/5"
-          helper="Products below the low-stock threshold."
+          helper="Products running low."
           icon={LayoutGrid}
           title="Low stock items"
           value={analytics.lowStockItems}
         />
         <MetricCard
           accent="from-chart-3/15 via-white to-chart-3/5"
-          helper="Estimated maximum stock value based on listed prices."
+          helper="Total value of inventory."
           icon={Plus}
           title="Estimated value"
           value={formatCurrency(analytics.estimatedStockValue)}
@@ -292,7 +292,7 @@ export default function InventoryPage() {
       {filteredResult.total === 0 ? (
         <EmptyState
           actionLabel="Add inventory item"
-          description="Create your first product or adjust your filters to see matching stock."
+          description="Add your first product to start tracking inventory."
           icon={PackageSearch}
           onAction={() => {
             setEditingItem(null);
