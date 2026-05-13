@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 
-export const APP_NAME = 'SunPulse Inventory';
+export const APP_NAME = 'Solar Inventory';
 export const LOW_STOCK_THRESHOLD = 10;
 export const DEFAULT_PAGE_SIZE = 8;
 export const CURRENCY = 'PKR';

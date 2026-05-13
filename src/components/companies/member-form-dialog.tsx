@@ -64,7 +64,7 @@ export function MemberFormDialog({
             error={form.formState.errors.email}
             label="Email"
             name="email"
-            placeholder="member@sunpulse.com"
+            placeholder="member@solar.com"
             register={form.register}
             type="email"
           />

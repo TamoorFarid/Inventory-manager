@@ -10,7 +10,7 @@ export function AppLogo({ className }: { className?: string }) {
       </div>
       <div className="space-y-0.5">
         <p className="font-display text-lg font-semibold tracking-tight text-slate-900">
-          SunPulse Inventory
+          Solar Inventory
         </p>
         <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">
           Operations Hub

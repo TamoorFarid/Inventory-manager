@@ -78,6 +78,7 @@ Deno.serve(async (request) => {
       });
     }
 
+    // In centralized mode, all authenticated users can create members
     const { data: requesterProfile, error: profileError } = await adminClient
       .from('profiles')
       .select('id, role')
@@ -89,10 +90,6 @@ Deno.serve(async (request) => {
       return jsonResponse(403, {
         error: 'Requesting profile is missing or inactive.',
       });
-    }
-
-    if (requesterProfile.role !== 'admin') {
-      return jsonResponse(403, { error: 'Only admins can create members.' });
     }
 
     const body = (await request.json()) as CreateMemberBody;

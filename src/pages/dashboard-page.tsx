@@ -22,6 +22,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications';
 import { getErrorMessage } from '@/lib/errors';
+import { getUserCompanyIds } from '@/lib/membership';
 import { formatCurrency, formatDateTime, formatRelativeTime } from '@/lib/utils';
 import { companyService } from '@/services/companyService';
 import { inventoryService } from '@/services/inventoryService';
@@ -45,9 +46,18 @@ export default function DashboardPage() {
     try {
       const nextCompanies = await companyService.listCompanies();
       const companyIds = nextCompanies.map((company) => company.id);
+      
+      // Get all company members to determine which companies user belongs to
+      const allMembersGroups = await Promise.all(
+        companyIds.map((companyId) => companyService.getCompanyMembers(companyId))
+      );
+      const allMembers = allMembersGroups.flat();
+      const userCompanyIds = getUserCompanyIds(profile.id, allMembers);
+      
       const [inventoryGroups, salesGroups, recentNotifications] = await Promise.all([
         Promise.all(companyIds.map((companyId) => inventoryService.listInventoryItems(companyId))),
-        Promise.all(companyIds.map((companyId) => salesService.listSales(companyId))),
+        // Only fetch sales for companies user is a member of
+        Promise.all(userCompanyIds.map((companyId) => salesService.listSales(companyId))),
         notificationService.listNotifications(profile.id, undefined, 6),
       ]);
 
@@ -95,14 +105,8 @@ export default function DashboardPage() {
   });
 
   const greeting = useMemo(() => {
-    if (!profile) {
-      return 'Operational overview';
-    }
-
-    return profile.role === 'admin'
-      ? 'Keep every company aligned from one clean command center.'
-      : 'Watch the inventory and sales activity for the companies you belong to.';
-  }, [profile]);
+    return 'Manage inventory and sales across all companies in one centralized platform.';
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -157,7 +161,7 @@ export default function DashboardPage() {
 
           {companies.length === 0 ? (
             <EmptyState
-              actionLabel={profile?.role === 'admin' ? 'Create your first company' : undefined}
+              actionLabel="Create your first company"
               description="Your dashboard will show metrics once companies are set up."
               icon={Building2}
               onAction={undefined}
@@ -259,7 +263,7 @@ export default function DashboardPage() {
                     <Link to="/companies">Manage companies</Link>
                   </Button>
                 </div>
-                <div className="grid gap-4 xl:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
                   {companies.slice(0, 4).map((company) => (
                     <CompanyCard company={company} key={company.id} />
                   ))}

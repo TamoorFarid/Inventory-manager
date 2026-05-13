@@ -96,17 +96,15 @@ export default function CompaniesPage() {
         eyebrow="Companies"
         title="Manage company workspaces"
         action={
-          profile?.role === 'admin' ? (
-            <Button
-              onClick={() => {
-                setEditingCompany(null);
-                setCompanyDialogOpen(true);
-              }}
-            >
-              <Plus className="size-4" />
-              Create company
-            </Button>
-          ) : undefined
+          <Button
+            onClick={() => {
+              setEditingCompany(null);
+              setCompanyDialogOpen(true);
+            }}
+          >
+            <Plus className="size-4" />
+            Create company
+          </Button>
         }
       />
 
@@ -114,45 +112,39 @@ export default function CompaniesPage() {
         <LoadingGrid />
       ) : companies.length === 0 ? (
         <EmptyState
-          actionLabel={profile?.role === 'admin' ? 'Create company' : undefined}
+          actionLabel="Create company"
           description="Create your first company to get started."
           icon={Building2}
-          onAction={
-            profile?.role === 'admin'
-              ? () => {
-                  setEditingCompany(null);
-                  setCompanyDialogOpen(true);
-                }
-              : undefined
-          }
+          onAction={() => {
+            setEditingCompany(null);
+            setCompanyDialogOpen(true);
+          }}
           title="No companies created yet"
         />
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
           {companies.map((company) => (
             <CompanyCard
               actions={
-                profile?.role === 'admin' ? (
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => {
-                        setEditingCompany(company);
-                        setCompanyDialogOpen(true);
-                      }}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      onClick={() => setCompanyToDelete(company)}
-                      size="sm"
-                      variant="ghost"
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                ) : null
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      setEditingCompany(company);
+                      setCompanyDialogOpen(true);
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    onClick={() => setCompanyToDelete(company)}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               }
               company={company}
               key={company.id}

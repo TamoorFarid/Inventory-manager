@@ -60,7 +60,7 @@ export function Sidebar({ companies, onLogout, profile }: SidebarProps) {
           <p className="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground">
             Companies
           </p>
-          <p className="text-xs text-muted-foreground">Scoped by membership</p>
+          <p className="text-xs text-muted-foreground">Centralized access</p>
         </div>
         <Badge variant="outline">{companies.length}</Badge>
       </div>

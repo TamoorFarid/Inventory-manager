@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/table';
 import { useAuth } from '@/hooks/use-auth';
 import { getErrorMessage } from '@/lib/errors';
+import { isCompanyMember } from '@/lib/membership';
 import { downloadCsv, formatCurrency, formatDateTime } from '@/lib/utils';
 import { companyService } from '@/services/companyService';
 import { inventoryService } from '@/services/inventoryService';
@@ -129,6 +130,20 @@ export default function SalesHistoryPage() {
 
   if (isLoading) {
     return <LoadingGrid />;
+  }
+
+  // Check if user is a member of this company
+  const isMember = companyId && profile ? isCompanyMember(companyId, profile.id, members) : false;
+
+  // If not a member, show access denied message
+  if (!isMember) {
+    return (
+      <EmptyState
+        description="You must be a member of this company to view sales data."
+        icon={ReceiptText}
+        title="Access restricted"
+      />
+    );
   }
 
   return (

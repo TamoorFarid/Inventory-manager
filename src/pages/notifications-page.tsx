@@ -131,10 +131,10 @@ export default function NotificationsPage() {
             />
             <MetricCard
               accent="from-chart-3/15 via-white to-chart-3/5"
-              helper="Admins see all, members see their companies."
+              helper="You see notifications for companies you belong to."
               icon={CheckCheck}
               title="Access model"
-              value={profile?.role === 'admin' ? 'Global' : 'Scoped'}
+              value="Company-Scoped"
             />
           </div>
 

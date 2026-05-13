@@ -16,7 +16,7 @@ export function CompanyCard({ company, actions }: CompanyCardProps) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="space-y-4 bg-gradient-to-br from-primary/10 via-white to-chart-2/10">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <Badge className="w-fit gap-2 bg-white/80 text-primary">
               <Building2 className="size-3.5" />
@@ -66,7 +66,7 @@ export function CompanyCard({ company, actions }: CompanyCardProps) {
           ) : null}
         </div>
       </CardContent>
-      <CardFooter className="flex items-center justify-between">
+      <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-muted-foreground">
           Updated by {company.updatedByProfile?.username ?? company.createdByProfile?.username ?? 'system'}
         </div>

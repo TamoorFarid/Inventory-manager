@@ -65,7 +65,7 @@ export function CompanyFormDialog({
             error={form.formState.errors.name}
             label="Company name"
             name="name"
-            placeholder="SunPulse Retail"
+            placeholder="Solar Retail"
             register={form.register}
           />
 
