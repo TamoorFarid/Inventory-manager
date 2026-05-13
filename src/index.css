@@ -1,0 +1,91 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 216 43% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 216 43% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 216 43% 11%;
+    --primary: 164 48% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 35% 95%;
+    --secondary-foreground: 217 33% 17%;
+    --muted: 210 35% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 45 96% 90%;
+    --accent-foreground: 28 72% 21%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 90%;
+    --input: 214 32% 90%;
+    --ring: 164 48% 35%;
+    --chart-1: 164 48% 35%;
+    --chart-2: 200 77% 45%;
+    --chart-3: 35 92% 54%;
+    --chart-4: 342 75% 55%;
+    --chart-5: 263 70% 59%;
+    --radius: 1.1rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-background font-sans text-foreground antialiased;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    @apply outline-none;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-[1.75rem] border border-white/70 bg-white/85 shadow-panel backdrop-blur-xl;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.26);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.38);
+}
