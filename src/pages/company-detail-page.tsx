@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 
 import { MemberFormDialog } from '@/components/companies/member-form-dialog';
+import { ProjectsTab } from '@/components/projects/projects-tab';
 import { QuotationsTab } from '@/components/quotations/quotations-tab';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LoadingGrid, LoadingTable } from '@/components/shared/loading-state';
@@ -35,7 +36,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
 import { getErrorMessage } from '@/lib/errors';
-import { isCompanyMember } from '@/lib/membership';
 import { formatCurrency, formatRelativeTime } from '@/lib/utils';
 import { companyService } from '@/services/companyService';
 import { inventoryService } from '@/services/inventoryService';
@@ -91,12 +91,6 @@ export default function CompanyDetailPage() {
   const lowStockItems = useMemo(
     () => inventoryItems.filter((item) => item.quantity <= 10).length,
     [inventoryItems],
-  );
-
-  // Check if current user is a member of this company
-  const isMember = useMemo(
-    () => companyId && profile ? isCompanyMember(companyId, profile.id, members) : false,
-    [companyId, profile, members],
   );
 
   const handleCreateMember = async (values: {
@@ -170,14 +164,12 @@ export default function CompanyDetailPage() {
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
-            {isMember ? (
-              <Button asChild>
-                <Link to={`/companies/${company.id}/sales`}>
-                  Sales
-                  <ReceiptText className="size-4" />
-                </Link>
-              </Button>
-            ) : null}
+            <Button asChild>
+              <Link to={`/companies/${company.id}/sales`}>
+                Sales
+                <ReceiptText className="size-4" />
+              </Link>
+            </Button>
           </div>
         }
       />
@@ -196,32 +188,20 @@ export default function CompanyDetailPage() {
           title="Inventory items"
           value={inventoryItems.length}
         />
-        {isMember ? (
-          <>
-            <MetricCard
-              accent="from-chart-3/15 via-white to-chart-3/5"
-              helper="Total revenue from sales."
-              icon={DollarSign}
-              title="Revenue"
-              value={formatCurrency(revenue)}
-            />
-            <MetricCard
-              accent="from-chart-4/15 via-white to-chart-4/5"
-              helper="Products running low."
-              icon={Clock3}
-              title="Low stock items"
-              value={lowStockItems}
-            />
-          </>
-        ) : (
-          <MetricCard
-            accent="from-chart-4/15 via-white to-chart-4/5"
-            helper="Products running low."
-            icon={Clock3}
-            title="Low stock items"
-            value={lowStockItems}
-          />
-        )}
+        <MetricCard
+          accent="from-chart-3/15 via-white to-chart-3/5"
+          helper="Total revenue from sales."
+          icon={DollarSign}
+          title="Revenue"
+          value={formatCurrency(revenue)}
+        />
+        <MetricCard
+          accent="from-chart-4/15 via-white to-chart-4/5"
+          helper="Products running low."
+          icon={Clock3}
+          title="Low stock items"
+          value={lowStockItems}
+        />
       </div>
 
       <Tabs defaultValue="overview">
@@ -229,10 +209,10 @@ export default function CompanyDetailPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
-          {isMember ? <TabsTrigger value="sales">Sales</TabsTrigger> : null}
+          <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="quotations">Quotations</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
-          {isMember ? <TabsTrigger value="activity">Activity</TabsTrigger> : null}
+          <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -375,116 +355,83 @@ export default function CompanyDetailPage() {
           </Card>
         </TabsContent>
 
-        {isMember ? (
-          <TabsContent value="sales">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Sales preview</CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Most recent transactions for this company.
-                  </p>
-                </div>
-                <Button asChild variant="outline">
-                  <Link to={`/companies/${company.id}/sales`}>Open sales history</Link>
-                </Button>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {sales.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No sales recorded yet.</p>
-                ) : (
-                  sales.slice(0, 5).map((sale) => (
-                    <div className="rounded-2xl border border-border/70 p-4" key={sale.id}>
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-medium text-slate-950">
-                            {sale.product?.title ?? 'Unknown product'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {sale.quantitySold} units by {sale.seller?.username ?? 'Unknown'}
-                          </p>
-                        </div>
-                        <p className="font-semibold text-slate-950">
-                          {formatCurrency(sale.totalAmount)}
+        <TabsContent value="sales">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Sales preview</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Most recent transactions for this company.
+                </p>
+              </div>
+              <Button asChild variant="outline">
+                <Link to={`/companies/${company.id}/sales`}>Open sales history</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {sales.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No sales recorded yet.</p>
+              ) : (
+                sales.slice(0, 5).map((sale) => (
+                  <div className="rounded-2xl border border-border/70 p-4" key={sale.id}>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-slate-950">
+                          {sale.product?.title ?? 'Unknown product'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {sale.quantitySold} units by {sale.seller?.username ?? 'Unknown'}
                         </p>
                       </div>
+                      <p className="font-semibold text-slate-950">
+                        {formatCurrency(sale.totalAmount)}
+                      </p>
                     </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ) : null}
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="quotations">
           <QuotationsTab
-            canCreate={isMember || company.createdBy === profile?.id}
+            canCreate
             companyId={company.id}
+            onProjectStarted={() => void loadCompany()}
           />
         </TabsContent>
 
         <TabsContent value="projects">
-            <Card>
-              <CardHeader>
-                <CardTitle>Projects</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Track and manage installation projects for this company.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
-                    <svg
-                      className="h-7 w-7 text-slate-400"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                  <p className="font-medium text-slate-700">Projects coming soon</p>
-                  <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                    Project tracking and management will be available here.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <ProjectsTab companyId={company.id} />
         </TabsContent>
 
-        {isMember ? (
-          <TabsContent value="activity">
-            <Card>
-              <CardHeader>
-                <CardTitle>Activity timeline</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {company.recentActivity.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Activity logs will appear here as records change.
-                  </p>
-                ) : (
-                  company.recentActivity.map((activity) => (
-                    <div
-                      className="rounded-[1.5rem] border border-border/70 p-5"
-                      key={activity.id}
-                    >
-                      <p className="font-medium text-slate-950">{activity.description}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {activity.actor?.username ?? 'System'} • {formatRelativeTime(activity.createdAt)}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ) : null}
+        <TabsContent value="activity">
+          <Card>
+            <CardHeader>
+              <CardTitle>Activity timeline</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {company.recentActivity.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Activity logs will appear here as records change.
+                </p>
+              ) : (
+                company.recentActivity.map((activity) => (
+                  <div
+                    className="rounded-[1.5rem] border border-border/70 p-5"
+                    key={activity.id}
+                  >
+                    <p className="font-medium text-slate-950">{activity.description}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {activity.actor?.username ?? 'System'} • {formatRelativeTime(activity.createdAt)}
+                    </p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <MemberFormDialog

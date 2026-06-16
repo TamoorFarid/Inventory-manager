@@ -10,6 +10,7 @@ interface QuotationRow {
   quote_date: string;
   subtotal: number;
   total: number;
+  status: 'pending' | 'approved';
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -36,6 +37,7 @@ function mapQuotation(row: QuotationRow): Quotation {
     quoteDate: row.quote_date,
     subtotal: Number(row.subtotal),
     total: Number(row.total),
+    status: row.status ?? 'pending',
     createdBy: row.created_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -58,13 +60,22 @@ function mapQuotationItem(row: QuotationItemRow): QuotationItem {
 async function listQuotations(companyId: string): Promise<Quotation[]> {
   const { data, error } = await supabase
     .from('quotations')
-    .select('id, company_id, est_id, customer_name, customer_address, quote_date, subtotal, total, created_by, created_at, updated_at, deleted_at')
+    .select('id, company_id, est_id, customer_name, customer_address, quote_date, subtotal, total, status, created_by, created_at, updated_at, deleted_at')
     .eq('company_id', companyId)
     .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map((row) => mapQuotation(row as QuotationRow));
+}
+
+async function approveQuotation(quotationId: string): Promise<void> {
+  const { error } = await supabase
+    .from('quotations')
+    .update({ status: 'approved' })
+    .eq('id', quotationId);
+
+  if (error) throw error;
 }
 
 async function getQuotationItems(quotationId: string): Promise<QuotationItem[]> {
@@ -118,4 +129,5 @@ export const quotationService = {
   listQuotations,
   getQuotationItems,
   createQuotation,
+  approveQuotation,
 };

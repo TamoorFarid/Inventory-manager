@@ -80,8 +80,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const signIn = useCallback(async (values: LoginValues) => {
     setIsLoading(true);
-    const { session: nextSession } = await authService.signIn(values);
-    await syncProfile(nextSession);
+    try {
+      const { session: nextSession } = await authService.signIn(values);
+      await syncProfile(nextSession);
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
+    }
   }, [syncProfile]);
 
   const signOut = useCallback(async () => {

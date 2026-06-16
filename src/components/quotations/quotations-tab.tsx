@@ -1,28 +1,44 @@
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { FileText, Plus } from 'lucide-react';
+import { CheckCircle2, Clock, FileText, MoreVertical, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { ApproveQuotationDialog } from '@/components/quotations/approve-quotation-dialog';
 import { QuotationDetailDialog } from '@/components/quotations/quotation-detail-dialog';
 import { QuotationFormDialog } from '@/components/quotations/quotation-form-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LoadingTable } from '@/components/shared/loading-state';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { getErrorMessage } from '@/lib/errors';
 import { quotationService } from '@/services/quotationService';
-import type { Quotation } from '@/types/domain';
+import type { Quotation, QuotationItem } from '@/types/domain';
 
 interface Props {
   companyId: string;
   canCreate?: boolean;
+  onProjectStarted?: () => void;
 }
 
-export function QuotationsTab({ companyId, canCreate = false }: Props) {
+export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }: Props) {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+
+  // View detail state
   const [detailQuotation, setDetailQuotation] = useState<Quotation | null>(null);
+
+  // Approve dialog state
+  const [approveQuotation, setApproveQuotation] = useState<Quotation | null>(null);
+  const [approveItems, setApproveItems] = useState<QuotationItem[]>([]);
+  const [isLoadingApproveItems, setIsLoadingApproveItems] = useState(false);
 
   const loadQuotations = useCallback(async () => {
     setIsLoading(true);
@@ -39,6 +55,25 @@ export function QuotationsTab({ companyId, canCreate = false }: Props) {
   useEffect(() => {
     void loadQuotations();
   }, [loadQuotations]);
+
+  const handleOpenApprove = async (q: Quotation) => {
+    setApproveQuotation(q);
+    setIsLoadingApproveItems(true);
+    try {
+      const items = await quotationService.getQuotationItems(q.id);
+      setApproveItems(items);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to load quotation items.'));
+      setApproveQuotation(null);
+    } finally {
+      setIsLoadingApproveItems(false);
+    }
+  };
+
+  const handleProjectStarted = () => {
+    void loadQuotations();
+    onProjectStarted?.();
+  };
 
   return (
     <>
@@ -89,6 +124,9 @@ export function QuotationsTab({ companyId, canCreate = false }: Props) {
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Total
                     </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Status
+                    </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                       Actions
                     </th>
@@ -118,14 +156,46 @@ export function QuotationsTab({ companyId, canCreate = false }: Props) {
                           maximumFractionDigits: 2,
                         })}
                       </td>
+                      <td className="px-4 py-3 text-center">
+                        {q.status === 'approved' ? (
+                          <Badge className="gap-1 bg-green-100 text-green-700 hover:bg-green-100">
+                            <CheckCircle2 className="size-3" />
+                            Approved
+                          </Badge>
+                        ) : (
+                          <Badge className="gap-1 bg-amber-100 text-amber-700 hover:bg-amber-100" variant="outline">
+                            <Clock className="size-3" />
+                            Pending
+                          </Badge>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right">
-                        <Button
-                          onClick={() => setDetailQuotation(q)}
-                          size="sm"
-                          variant="outline"
-                        >
-                          Details
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              className="size-8"
+                              size="sm"
+                              variant="ghost"
+                            >
+                              <MoreVertical className="size-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setDetailQuotation(q)}>
+                              View
+                            </DropdownMenuItem>
+                            {q.status === 'pending' ? (
+                              <DropdownMenuItem
+                                className="text-green-700 focus:text-green-700"
+                                disabled={isLoadingApproveItems}
+                                onClick={() => void handleOpenApprove(q)}
+                              >
+                                Mark as Approved
+                              </DropdownMenuItem>
+                            ) : null}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </td>
                     </tr>
                   ))}
@@ -147,6 +217,14 @@ export function QuotationsTab({ companyId, canCreate = false }: Props) {
         isOpen={Boolean(detailQuotation)}
         onOpenChange={(open) => !open && setDetailQuotation(null)}
         quotation={detailQuotation}
+      />
+
+      <ApproveQuotationDialog
+        isOpen={Boolean(approveQuotation) && !isLoadingApproveItems}
+        items={approveItems}
+        onOpenChange={(open) => !open && setApproveQuotation(null)}
+        onProjectStarted={handleProjectStarted}
+        quotation={approveQuotation}
       />
     </>
   );

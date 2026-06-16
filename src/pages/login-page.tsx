@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { AlertCircle, LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 
@@ -18,6 +18,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -32,13 +33,14 @@ export default function LoginPage() {
 
   const handleSubmit = form.handleSubmit(async (values) => {
     setIsSubmitting(true);
+    setLoginError(null);
 
     try {
       await signIn(values);
       toast.success('Welcome back!');
       navigate(location.state?.from?.pathname ?? '/', { replace: true });
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Invalid email or password.'));
+      setLoginError(getErrorMessage(error, 'Invalid email or password.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -113,7 +115,7 @@ export default function LoginPage() {
               </div>
 
               <CardContent className="space-y-6 p-8">
-                <form className="space-y-5" onSubmit={handleSubmit}>
+                <form className="space-y-5" onChange={() => setLoginError(null)} onSubmit={handleSubmit}>
                   <FormInput
                     error={form.formState.errors.email}
                     label="Email"
@@ -130,6 +132,12 @@ export default function LoginPage() {
                     register={form.register}
                     type="password"
                   />
+                  {loginError ? (
+                    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                      <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                      <span>{loginError}</span>
+                    </div>
+                  ) : null}
                   <Button className="w-full" disabled={isSubmitting} size="lg" type="submit">
                     {isSubmitting ? (
                       <>

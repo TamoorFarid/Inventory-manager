@@ -152,6 +152,8 @@ export interface SalesFilters {
   soldBy?: string;
 }
 
+export type QuotationStatus = 'pending' | 'approved';
+
 export interface Quotation {
   id: string;
   companyId: string;
@@ -161,6 +163,7 @@ export interface Quotation {
   quoteDate: string;
   subtotal: number;
   total: number;
+  status: QuotationStatus;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -175,4 +178,38 @@ export interface QuotationItem {
   quantity: number;
   unitPrice: number;
   amount: number;
+}
+
+export type ProjectStatus = 'in_progress' | 'completed';
+
+export interface Project {
+  id: string;
+  companyId: string;
+  quotationId: string;
+  estId: string;
+  customerName: string;
+  customerAddress: string;
+  quoteTotal: number;
+  totalCost: number;
+  profitAmount: number;
+  profitPercentage: number;
+  status: ProjectStatus;
+  startedAt: string;
+  completedAt: string | null;
+  createdBy: string | null;
+  updatedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectItem {
+  id: string;
+  projectId: string;
+  slNo: number;
+  description: string;
+  quantity: number;
+  salePrice: number;
+  costPrice: number;
+  saleAmount: number;
+  costAmount: number;
 }
