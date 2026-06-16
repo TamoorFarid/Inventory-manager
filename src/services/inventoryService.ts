@@ -207,11 +207,63 @@ function applyInventoryFilters(items: InventoryItem[], filters: InventoryFilters
   };
 }
 
+async function migrateInventoryItem(
+  sourceItemId: string,
+  targetCompanyId: string,
+  quantity: number,
+  userId: string,
+) {
+  const { data: src, error: srcErr } = await supabase
+    .from('inventory_items')
+    .select('id, company_id, title, description, max_selling_price, min_selling_price, quantity')
+    .eq('id', sourceItemId)
+    .single();
+
+  if (srcErr || !src) throw srcErr ?? new Error('Source item not found');
+  if ((src.quantity as number) < quantity) throw new Error('Not enough stock to migrate');
+
+  const { data: existing } = await supabase
+    .from('inventory_items')
+    .select('id, quantity')
+    .eq('company_id', targetCompanyId)
+    .ilike('title', src.title as string)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (existing) {
+    const { error } = await supabase
+      .from('inventory_items')
+      .update({ quantity: (existing.quantity as number) + quantity, updated_by: userId })
+      .eq('id', existing.id);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from('inventory_items').insert({
+      company_id: targetCompanyId,
+      title: src.title,
+      description: src.description,
+      max_selling_price: src.max_selling_price,
+      min_selling_price: src.min_selling_price,
+      quantity,
+      created_by: userId,
+      updated_by: userId,
+    });
+    if (error) throw error;
+  }
+
+  const { error: deductErr } = await supabase
+    .from('inventory_items')
+    .update({ quantity: (src.quantity as number) - quantity, updated_by: userId })
+    .eq('id', sourceItemId);
+
+  if (deductErr) throw deductErr;
+}
+
 export const inventoryService = {
   applyInventoryFilters,
   buildInventoryAnalytics,
   createInventoryItem,
   deleteInventoryItem,
   listInventoryItems,
+  migrateInventoryItem,
   updateInventoryItem,
 };

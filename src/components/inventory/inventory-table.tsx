@@ -1,7 +1,14 @@
-import { ArrowUpDown, Pencil, Trash2 } from 'lucide-react';
+import { ArrowUpDown, MoreHorizontal, Pencil, Share2, Trash2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -18,13 +25,10 @@ interface InventoryTableProps {
   items: InventoryItem[];
   onDelete: (item: InventoryItem) => void;
   onEdit: (item: InventoryItem) => void;
+  onMigrate: (item: InventoryItem) => void;
 }
 
-export function InventoryTable({
-  items,
-  onDelete,
-  onEdit,
-}: InventoryTableProps) {
+export function InventoryTable({ items, onDelete, onEdit, onMigrate }: InventoryTableProps) {
   return (
     <div className="rounded-[1.75rem] border border-white/70 bg-white/95 p-4 shadow-panel sm:p-6">
       <Table>
@@ -63,21 +67,39 @@ export function InventoryTable({
                 </div>
               </TableCell>
               <TableCell>
-                {formatCurrency(item.minSellingPrice)} - {formatCurrency(item.maxSellingPrice)}
+                {formatCurrency(item.minSellingPrice)} – {formatCurrency(item.maxSellingPrice)}
               </TableCell>
               <TableCell>
                 {item.updatedByProfile?.username ?? item.createdByProfile?.username ?? 'system'}
               </TableCell>
               <TableCell>{formatRelativeTime(item.updatedAt)}</TableCell>
               <TableCell className="text-right">
-                <div className="flex justify-end gap-2">
-                  <Button onClick={() => onEdit(item)} size="sm" variant="outline">
-                    <Pencil className="size-4" />
-                  </Button>
-                  <Button onClick={() => onDelete(item)} size="sm" variant="ghost">
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="ghost">
+                      <MoreHorizontal className="size-4" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(item)}>
+                      <Pencil className="size-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onMigrate(item)}>
+                      <Share2 className="size-4" />
+                      Migrate to company
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onDelete(item)}
+                    >
+                      <Trash2 className="size-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}

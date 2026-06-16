@@ -333,6 +333,17 @@ async function removeMember(memberId: string, actorId: string) {
   }
 }
 
+async function listCompaniesSimple(): Promise<Array<{ id: string; name: string }>> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('id, name')
+    .is('deleted_at', null)
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as Array<{ id: string; name: string }>;
+}
+
 export const companyService = {
   addMember,
   archiveCompany,
@@ -341,6 +352,7 @@ export const companyService = {
   getCompanyById,
   getCompanyMembers,
   listCompanies,
+  listCompaniesSimple,
   removeMember,
   updateCompany,
 };

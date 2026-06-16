@@ -1,8 +1,15 @@
-import { Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Share2, Trash2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { LOW_STOCK_THRESHOLD } from '@/lib/constants';
 import { formatCurrency, formatRelativeTime } from '@/lib/utils';
 import type { InventoryItem } from '@/types/domain';
@@ -11,13 +18,10 @@ interface InventoryCardsProps {
   items: InventoryItem[];
   onDelete: (item: InventoryItem) => void;
   onEdit: (item: InventoryItem) => void;
+  onMigrate: (item: InventoryItem) => void;
 }
 
-export function InventoryCards({
-  items,
-  onDelete,
-  onEdit,
-}: InventoryCardsProps) {
+export function InventoryCards({ items, onDelete, onEdit, onMigrate }: InventoryCardsProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => {
@@ -53,7 +57,7 @@ export function InventoryCards({
                     Price range
                   </p>
                   <p className="mt-2 text-sm font-semibold text-slate-950">
-                    {formatCurrency(item.minSellingPrice)} - {formatCurrency(item.maxSellingPrice)}
+                    {formatCurrency(item.minSellingPrice)} – {formatCurrency(item.maxSellingPrice)}
                   </p>
                 </div>
               </div>
@@ -67,10 +71,28 @@ export function InventoryCards({
                 <Pencil className="size-4" />
                 Edit
               </Button>
-              <Button onClick={() => onDelete(item)} variant="ghost">
-                <Trash2 className="size-4" />
-                Delete
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="ghost">
+                    <MoreHorizontal className="size-4" />
+                    <span className="sr-only">More options</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onMigrate(item)}>
+                    <Share2 className="size-4" />
+                    Migrate to company
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => onDelete(item)}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardFooter>
           </Card>
         );

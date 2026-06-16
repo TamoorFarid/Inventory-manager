@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 
 import { InventoryCards } from '@/components/inventory/inventory-cards';
 import { InventoryFormDialog } from '@/components/inventory/inventory-form-dialog';
+import { InventoryMigrateDialog } from '@/components/inventory/inventory-migrate-dialog';
 import { InventoryTable } from '@/components/inventory/inventory-table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LoadingGrid } from '@/components/shared/loading-state';
@@ -64,6 +65,7 @@ export default function InventoryPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
+  const [migratingItem, setMigratingItem] = useState<InventoryItem | null>(null);
 
   const loadPage = useCallback(async () => {
     if (!companyId) {
@@ -308,6 +310,7 @@ export default function InventoryPage() {
             setEditingItem(item);
             setDialogOpen(true);
           }}
+          onMigrate={setMigratingItem}
         />
       ) : (
         <InventoryTable
@@ -317,6 +320,7 @@ export default function InventoryPage() {
             setEditingItem(item);
             setDialogOpen(true);
           }}
+          onMigrate={setMigratingItem}
         />
       )}
 
@@ -365,6 +369,13 @@ export default function InventoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <InventoryMigrateDialog
+        isOpen={Boolean(migratingItem)}
+        item={migratingItem}
+        onOpenChange={(open) => { if (!open) setMigratingItem(null); }}
+        onSuccess={() => void loadPage()}
+      />
     </div>
   );
 }

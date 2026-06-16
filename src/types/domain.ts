@@ -151,3 +151,28 @@ export interface SalesFilters {
   inventoryItemId?: string;
   soldBy?: string;
 }
+
+export interface Quotation {
+  id: string;
+  companyId: string;
+  estId: string;
+  customerName: string;
+  customerAddress: string;
+  quoteDate: string;
+  subtotal: number;
+  total: number;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
+export interface QuotationItem {
+  id: string;
+  quotationId: string;
+  slNo: number;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+}

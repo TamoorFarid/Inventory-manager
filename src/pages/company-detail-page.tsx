@@ -14,6 +14,7 @@ import {
 import { toast } from 'sonner';
 
 import { MemberFormDialog } from '@/components/companies/member-form-dialog';
+import { QuotationsTab } from '@/components/quotations/quotations-tab';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LoadingGrid, LoadingTable } from '@/components/shared/loading-state';
 import { MetricCard } from '@/components/shared/metric-card';
@@ -229,6 +230,8 @@ export default function CompanyDetailPage() {
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
           {isMember ? <TabsTrigger value="sales">Sales</TabsTrigger> : null}
+          <TabsTrigger value="quotations">Quotations</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
           {isMember ? <TabsTrigger value="activity">Activity</TabsTrigger> : null}
         </TabsList>
 
@@ -412,6 +415,47 @@ export default function CompanyDetailPage() {
             </Card>
           </TabsContent>
         ) : null}
+
+        <TabsContent value="quotations">
+          <QuotationsTab
+            canCreate={isMember || company.createdBy === profile?.id}
+            companyId={company.id}
+          />
+        </TabsContent>
+
+        <TabsContent value="projects">
+            <Card>
+              <CardHeader>
+                <CardTitle>Projects</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Track and manage installation projects for this company.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                    <svg
+                      className="h-7 w-7 text-slate-400"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <p className="font-medium text-slate-700">Projects coming soon</p>
+                  <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+                    Project tracking and management will be available here.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+        </TabsContent>
 
         {isMember ? (
           <TabsContent value="activity">
