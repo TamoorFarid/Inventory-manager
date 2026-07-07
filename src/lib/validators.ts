@@ -28,16 +28,20 @@ export const memberSchema = z.object({
 export const inventorySchema = z.object({
   title: z.string().min(2, 'Product title is required.').max(160),
   description: z.string().max(500).optional().or(z.literal('')),
-  maxSellingPrice: z.coerce.number().positive('Enter a valid maximum price.'),
-  minSellingPrice: z.coerce.number().positive('Enter a valid minimum price.'),
+  kwPv: z.string().max(80).optional().or(z.literal('')),
+  ipRating: z.string().max(80).optional().or(z.literal('')),
+  warranty: z.string().max(80).optional().or(z.literal('')),
+  maxSellingPrice: z.coerce.number().positive('Enter a valid end user price.'),
+  minSellingPrice: z.coerce.number().positive('Enter a valid installer price.'),
   quantity: z.coerce.number().int().min(0, 'Quantity cannot be negative.'),
 }).refine((values) => values.maxSellingPrice >= values.minSellingPrice, {
-  message: 'Maximum selling price must be greater than or equal to minimum price.',
+  message: 'End user price must be greater than or equal to installer price.',
   path: ['maxSellingPrice'],
 });
 
 export const saleSchema = z.object({
   inventoryItemId: z.string().uuid('Select a product.'),
+  customerName: z.string().min(2, 'Customer name is required.').max(160),
   quantitySold: z.coerce.number().int().positive('Quantity must be at least 1.'),
   sellingPricePerUnit: z.coerce
     .number()

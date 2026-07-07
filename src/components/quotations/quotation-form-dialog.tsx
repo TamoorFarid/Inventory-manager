@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +8,14 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 import { QuotePDFTemplate } from '@/components/quotations/quote-pdf-template';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -133,20 +141,58 @@ interface Props {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  quotation?: Quotation | null;
+  quotationItems?: QuotationItem[];
 }
 
-export function QuotationFormDialog({ companyId, isOpen, onOpenChange, onCreated }: Props) {
+const createDefaultValues: FormValues = {
+  customerName: '',
+  customerAddress: '',
+  quoteDate: format(new Date(), 'yyyy-MM-dd'),
+  items: [{ description: '', quantity: '1', unitPrice: '0' }],
+};
+
+export function QuotationFormDialog({
+  companyId,
+  isOpen,
+  onOpenChange,
+  onCreated,
+  quotation = null,
+  quotationItems = [],
+}: Props) {
+  const isEditMode = Boolean(quotation);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingValues, setPendingValues] = useState<FormValues | null>(null);
+  const [saveChoiceOpen, setSaveChoiceOpen] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      customerName: '',
-      customerAddress: '',
-      quoteDate: format(new Date(), 'yyyy-MM-dd'),
-      items: [{ description: '', quantity: '1', unitPrice: '0' }],
-    },
+    defaultValues: createDefaultValues,
   });
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    if (quotation) {
+      form.reset({
+        customerName: quotation.customerName,
+        customerAddress: quotation.customerAddress,
+        quoteDate: quotation.quoteDate,
+        items:
+          quotationItems.length > 0
+            ? quotationItems.map((item) => ({
+                description: item.description,
+                quantity: String(item.quantity),
+                unitPrice: String(item.unitPrice),
+              }))
+            : [{ description: '', quantity: '1', unitPrice: '0' }],
+      });
+    } else {
+      form.reset(createDefaultValues);
+    }
+  }, [form, isOpen, quotation, quotationItems]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -168,11 +214,13 @@ export function QuotationFormDialog({ companyId, isOpen, onOpenChange, onCreated
 
   const handleClose = () => {
     if (isSubmitting) return;
-    form.reset();
+    form.reset(createDefaultValues);
+    setPendingValues(null);
+    setSaveChoiceOpen(false);
     onOpenChange(false);
   };
 
-  const onSubmit = async (values: FormValues) => {
+  const finalizeSave = async (values: FormValues, saveMode: 'update' | 'create') => {
     setIsSubmitting(true);
     try {
       const itemsWithAmounts = values.items.map((item, i) => ({
@@ -183,17 +231,25 @@ export function QuotationFormDialog({ companyId, isOpen, onOpenChange, onCreated
         amount: parseFloat(item.quantity) * parseFloat(item.unitPrice),
       }));
 
-      const quotation = await quotationService.createQuotation({
-        companyId,
-        customerName: values.customerName,
-        customerAddress: values.customerAddress,
-        quoteDate: values.quoteDate,
-        items: itemsWithAmounts,
-      });
+      const savedQuotation =
+        saveMode === 'update' && quotation
+          ? await quotationService.updateQuotation(quotation.id, {
+              customerName: values.customerName,
+              customerAddress: values.customerAddress,
+              quoteDate: values.quoteDate,
+              items: itemsWithAmounts,
+            })
+          : await quotationService.createQuotation({
+              companyId,
+              customerName: values.customerName,
+              customerAddress: values.customerAddress,
+              quoteDate: values.quoteDate,
+              items: itemsWithAmounts,
+            });
 
-      const quotationItems: QuotationItem[] = itemsWithAmounts.map((item, i) => ({
+      const savedItems: QuotationItem[] = itemsWithAmounts.map((item, i) => ({
         id: `temp-${i}`,
-        quotationId: quotation.id,
+        quotationId: savedQuotation.id,
         slNo: item.slNo,
         description: item.description,
         quantity: item.quantity,
@@ -201,25 +257,47 @@ export function QuotationFormDialog({ companyId, isOpen, onOpenChange, onCreated
         amount: item.amount,
       }));
 
-      toast.success('Quotation saved. Generating PDF...');
-      await downloadQuotePDF(quotation, quotationItems);
+      toast.success(
+        saveMode === 'update'
+          ? 'Quotation updated. Generating PDF...'
+          : 'Quotation saved. Generating PDF...',
+      );
+      await downloadQuotePDF(savedQuotation, savedItems);
       toast.success('PDF downloaded successfully.');
 
-      form.reset();
+      setPendingValues(null);
+      setSaveChoiceOpen(false);
+      form.reset(createDefaultValues);
       onOpenChange(false);
       onCreated();
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Failed to create quotation.'));
+      toast.error(
+        getErrorMessage(
+          error,
+          saveMode === 'update' ? 'Failed to update quotation.' : 'Failed to create quotation.',
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const onSubmit = async (values: FormValues) => {
+    if (isEditMode) {
+      setPendingValues(values);
+      setSaveChoiceOpen(true);
+      return;
+    }
+
+    await finalizeSave(values, 'create');
+  };
+
   return (
+    <>
     <Dialog onOpenChange={handleClose} open={isOpen}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>New Quotation</DialogTitle>
+          <DialogTitle>{isEditMode ? `Edit Quotation ${quotation?.estId ?? ''}` : 'New Quotation'}</DialogTitle>
         </DialogHeader>
 
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
@@ -404,6 +482,8 @@ export function QuotationFormDialog({ companyId, isOpen, onOpenChange, onCreated
                   <Loader2 className="size-4 animate-spin" />
                   Generating...
                 </>
+              ) : isEditMode ? (
+                'Save'
               ) : (
                 'Generate Quote'
               )}
@@ -412,5 +492,63 @@ export function QuotationFormDialog({ companyId, isOpen, onOpenChange, onCreated
         </form>
       </DialogContent>
     </Dialog>
+
+      <AlertDialog
+        onOpenChange={(open) => {
+          if (!isSubmitting) setSaveChoiceOpen(open);
+        }}
+        open={saveChoiceOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              Update {quotation?.estId} with these changes, or save them as a brand-new
+              quotation (with a new EST ID and date) and leave {quotation?.estId} untouched?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              disabled={isSubmitting}
+              onClick={() => setSaveChoiceOpen(false)}
+              type="button"
+              variant="ghost"
+            >
+              Keep editing
+            </Button>
+            <Button
+              disabled={isSubmitting}
+              onClick={() => pendingValues && void finalizeSave(pendingValues, 'create')}
+              type="button"
+              variant="outline"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save as new quote'
+              )}
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isSubmitting}
+              onClick={() => pendingValues && void finalizeSave(pendingValues, 'update')}
+              type="button"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Update this quote'
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Quotation, QuotationItem } from '@/types/domain';
+import type { Quotation, QuotationFilters, QuotationItem } from '@/types/domain';
 
 interface QuotationRow {
   id: string;
@@ -57,13 +57,25 @@ function mapQuotationItem(row: QuotationItemRow): QuotationItem {
   };
 }
 
-async function listQuotations(companyId: string): Promise<Quotation[]> {
-  const { data, error } = await supabase
+async function listQuotations(
+  companyId: string,
+  filters?: QuotationFilters,
+): Promise<Quotation[]> {
+  let query = supabase
     .from('quotations')
     .select('id, company_id, est_id, customer_name, customer_address, quote_date, subtotal, total, status, created_by, created_at, updated_at, deleted_at')
     .eq('company_id', companyId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false });
+    .is('deleted_at', null);
+
+  if (filters?.fromDate) {
+    query = query.gte('quote_date', filters.fromDate);
+  }
+
+  if (filters?.toDate) {
+    query = query.lte('quote_date', filters.toDate);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map((row) => mapQuotation(row as QuotationRow));
@@ -73,6 +85,19 @@ async function approveQuotation(quotationId: string): Promise<void> {
   const { error } = await supabase
     .from('quotations')
     .update({ status: 'approved' })
+    .eq('id', quotationId);
+
+  if (error) throw error;
+}
+
+async function deleteQuotation(quotationId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('quotations')
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: userId,
+      updated_by: userId,
+    })
     .eq('id', quotationId);
 
   if (error) throw error;
@@ -125,9 +150,49 @@ async function createQuotation(input: {
   return mapQuotation(data as QuotationRow);
 }
 
+async function updateQuotation(
+  quotationId: string,
+  input: {
+    customerName: string;
+    customerAddress: string;
+    quoteDate: string;
+    items: Array<{
+      slNo: number;
+      description: string;
+      quantity: number;
+      unitPrice: number;
+      amount: number;
+    }>;
+  },
+): Promise<Quotation> {
+  const subtotal = input.items.reduce((sum, item) => sum + item.amount, 0);
+
+  const { data, error } = await supabase.rpc('update_quotation', {
+    p_quotation_id:     quotationId,
+    p_customer_name:    input.customerName,
+    p_customer_address: input.customerAddress,
+    p_quote_date:       input.quoteDate,
+    p_subtotal:         subtotal,
+    p_total:            subtotal,
+    p_items:            input.items.map((item) => ({
+      slNo:        item.slNo,
+      description: item.description,
+      quantity:    item.quantity,
+      unitPrice:   item.unitPrice,
+      amount:      item.amount,
+    })),
+  });
+
+  if (error) throw error;
+
+  return mapQuotation(data as QuotationRow);
+}
+
 export const quotationService = {
   listQuotations,
   getQuotationItems,
   createQuotation,
+  updateQuotation,
   approveQuotation,
+  deleteQuotation,
 };

@@ -13,6 +13,9 @@ interface InventoryItemRow {
   company_id: string;
   title: string;
   description: string | null;
+  kw_pv: string | null;
+  ip_rating: string | null;
+  warranty: string | null;
   max_selling_price: number;
   min_selling_price: number;
   quantity: number;
@@ -30,6 +33,9 @@ function mapInventoryItem(row: InventoryItemRow): InventoryItem {
     companyId: row.company_id,
     title: row.title,
     description: row.description,
+    kwPv: row.kw_pv,
+    ipRating: row.ip_rating,
+    warranty: row.warranty,
     maxSellingPrice: Number(row.max_selling_price),
     minSellingPrice: Number(row.min_selling_price),
     quantity: row.quantity,
@@ -46,7 +52,7 @@ async function listInventoryItems(companyId: string) {
   const { data, error } = await supabase
     .from('inventory_items')
     .select(
-      'id, company_id, title, description, max_selling_price, min_selling_price, quantity, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at',
+      'id, company_id, title, description, kw_pv, ip_rating, warranty, max_selling_price, min_selling_price, quantity, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at',
     )
     .eq('company_id', companyId)
     .is('deleted_at', null)
@@ -79,6 +85,9 @@ async function createInventoryItem(
       company_id: companyId,
       title: values.title.trim(),
       description: values.description?.trim() || null,
+      kw_pv: values.kwPv?.trim() || null,
+      ip_rating: values.ipRating?.trim() || null,
+      warranty: values.warranty?.trim() || null,
       max_selling_price: values.maxSellingPrice,
       min_selling_price: values.minSellingPrice,
       quantity: values.quantity,
@@ -86,7 +95,7 @@ async function createInventoryItem(
       updated_by: userId,
     })
     .select(
-      'id, company_id, title, description, max_selling_price, min_selling_price, quantity, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at',
+      'id, company_id, title, description, kw_pv, ip_rating, warranty, max_selling_price, min_selling_price, quantity, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at',
     )
     .single();
 
@@ -107,6 +116,9 @@ async function updateInventoryItem(
     .update({
       title: values.title.trim(),
       description: values.description?.trim() || null,
+      kw_pv: values.kwPv?.trim() || null,
+      ip_rating: values.ipRating?.trim() || null,
+      warranty: values.warranty?.trim() || null,
       max_selling_price: values.maxSellingPrice,
       min_selling_price: values.minSellingPrice,
       quantity: values.quantity,
@@ -114,7 +126,7 @@ async function updateInventoryItem(
     })
     .eq('id', itemId)
     .select(
-      'id, company_id, title, description, max_selling_price, min_selling_price, quantity, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at',
+      'id, company_id, title, description, kw_pv, ip_rating, warranty, max_selling_price, min_selling_price, quantity, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at',
     )
     .single();
 
@@ -215,7 +227,7 @@ async function migrateInventoryItem(
 ) {
   const { data: src, error: srcErr } = await supabase
     .from('inventory_items')
-    .select('id, company_id, title, description, max_selling_price, min_selling_price, quantity')
+    .select('id, company_id, title, description, kw_pv, ip_rating, warranty, max_selling_price, min_selling_price, quantity')
     .eq('id', sourceItemId)
     .single();
 
@@ -241,6 +253,9 @@ async function migrateInventoryItem(
       company_id: targetCompanyId,
       title: src.title,
       description: src.description,
+      kw_pv: src.kw_pv,
+      ip_rating: src.ip_rating,
+      warranty: src.warranty,
       max_selling_price: src.max_selling_price,
       min_selling_price: src.min_selling_price,
       quantity,

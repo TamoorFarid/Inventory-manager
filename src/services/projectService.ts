@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Project, ProjectItem } from '@/types/domain';
+import type { Project, ProjectFilters, ProjectItem } from '@/types/domain';
 
 interface ProjectRow {
   id: string;
@@ -19,6 +19,8 @@ interface ProjectRow {
   updated_by: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
+  deleted_by: string | null;
 }
 
 interface ProjectItemRow {
@@ -52,6 +54,8 @@ function mapProject(row: ProjectRow): Project {
     updatedBy: row.updated_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
   };
 }
 
@@ -69,12 +73,22 @@ function mapProjectItem(row: ProjectItemRow): ProjectItem {
   };
 }
 
-async function listProjects(companyId: string): Promise<Project[]> {
-  const { data, error } = await supabase
+async function listProjects(companyId: string, filters?: ProjectFilters): Promise<Project[]> {
+  let query = supabase
     .from('projects')
     .select('*')
     .eq('company_id', companyId)
-    .order('created_at', { ascending: false });
+    .is('deleted_at', null);
+
+  if (filters?.fromDate) {
+    query = query.gte('started_at', `${filters.fromDate}T00:00:00`);
+  }
+
+  if (filters?.toDate) {
+    query = query.lte('started_at', `${filters.toDate}T23:59:59`);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) throw error;
   return (data ?? []).map((row) => mapProject(row as ProjectRow));
@@ -152,8 +166,22 @@ async function completeProject(projectId: string, updatedBy: string): Promise<vo
   if (error) throw error;
 }
 
+async function deleteProject(projectId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: userId,
+      updated_by: userId,
+    })
+    .eq('id', projectId);
+
+  if (error) throw error;
+}
+
 export const projectService = {
   listProjects,
   createProject,
   completeProject,
+  deleteProject,
 };

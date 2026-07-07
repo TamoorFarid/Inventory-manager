@@ -1,6 +1,7 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useWatch } from 'react-hook-form';
+import { Search } from 'lucide-react';
 import { z } from 'zod';
 
 import { FieldHint, FormInput } from '@/components/shared/form-field';
@@ -13,6 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -34,6 +36,7 @@ interface SaleFormDialogProps {
 
 const defaultValues: SaleValues = {
   inventoryItemId: '',
+  customerName: '',
   quantitySold: 1,
   sellingPricePerUnit: 0,
 };
@@ -50,6 +53,10 @@ export function SaleFormDialog({
     defaultValues,
   });
 
+  const [isProductSelectOpen, setIsProductSelectOpen] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const productSearchInputRef = useRef<HTMLInputElement>(null);
+
   const selectedItemId = useWatch({
     control: form.control,
     name: 'inventoryItemId',
@@ -59,11 +66,27 @@ export function SaleFormDialog({
     [inventoryItems, selectedItemId],
   );
 
+  const filteredInventoryItems = useMemo(() => {
+    const query = productSearch.trim().toLowerCase();
+    if (!query) {
+      return inventoryItems;
+    }
+    return inventoryItems.filter((item) => item.title.toLowerCase().includes(query));
+  }, [inventoryItems, productSearch]);
+
   useEffect(() => {
     if (isOpen) {
       form.reset(defaultValues);
     }
   }, [form, isOpen]);
+
+  useEffect(() => {
+    if (isProductSelectOpen) {
+      const timeout = setTimeout(() => productSearchInputRef.current?.focus(), 0);
+      return () => clearTimeout(timeout);
+    }
+    setProductSearch('');
+  }, [isProductSelectOpen]);
 
   useEffect(() => {
     if (!selectedItem) {
@@ -113,20 +136,43 @@ export function SaleFormDialog({
           <div className="space-y-2">
             <label className="text-sm font-medium">Product</label>
             <Select
+              onOpenChange={setIsProductSelectOpen}
               onValueChange={(value) =>
                 form.setValue('inventoryItemId', value, { shouldValidate: true })
               }
+              open={isProductSelectOpen}
               value={selectedItemId}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select inventory item" />
               </SelectTrigger>
               <SelectContent>
-                {inventoryItems.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.title}
-                  </SelectItem>
-                ))}
+                <div
+                  className="sticky top-0 z-10 -mx-1 -mt-1 mb-1 border-b border-border/70 bg-white p-1.5"
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      className="h-8 pl-7 text-sm"
+                      onChange={(event) => setProductSearch(event.target.value)}
+                      placeholder="Search product..."
+                      ref={productSearchInputRef}
+                      value={productSearch}
+                    />
+                  </div>
+                </div>
+                {filteredInventoryItems.length === 0 ? (
+                  <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+                    No products found.
+                  </p>
+                ) : (
+                  filteredInventoryItems.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.title}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             {form.formState.errors.inventoryItemId ? (
@@ -147,6 +193,13 @@ export function SaleFormDialog({
             </div>
           ) : null}
 
+          <FormInput
+            error={form.formState.errors.customerName}
+            label="Customer name"
+            name="customerName"
+            placeholder="Jane Doe"
+            register={form.register}
+          />
           <FormInput
             error={form.formState.errors.quantitySold}
             label="Quantity sold"

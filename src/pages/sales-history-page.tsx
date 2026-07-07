@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, DollarSign, Plus, ReceiptText, ShoppingCart } from 'lucide-react';
+import { Download, DollarSign, Plus, ReceiptText, ShoppingCart, Trash2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -9,6 +9,16 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { LoadingGrid } from '@/components/shared/loading-state';
 import { MetricCard } from '@/components/shared/metric-card';
 import { PageHeader } from '@/components/shared/page-header';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -47,6 +57,8 @@ export default function SalesHistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [saleDialogOpen, setSaleDialogOpen] = useState(false);
   const [isSubmittingSale, setIsSubmittingSale] = useState(false);
+  const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
+  const [isDeletingSale, setIsDeletingSale] = useState(false);
 
   const loadPage = useCallback(async () => {
     if (!companyId) {
@@ -85,6 +97,7 @@ export default function SalesHistoryPage() {
 
   const handleRecordSale = async (values: {
     inventoryItemId: string;
+    customerName: string;
     quantitySold: number;
     sellingPricePerUnit: number;
   }) => {
@@ -98,6 +111,7 @@ export default function SalesHistoryPage() {
       await salesService.recordSale({
         companyId,
         inventoryItemId: values.inventoryItemId,
+        customerName: values.customerName,
         quantitySold: values.quantitySold,
         sellingPricePerUnit: values.sellingPricePerUnit,
       });
@@ -111,13 +125,33 @@ export default function SalesHistoryPage() {
     }
   };
 
+  const handleDeleteSale = async () => {
+    if (!saleToDelete || !profile) {
+      return;
+    }
+
+    setIsDeletingSale(true);
+
+    try {
+      await salesService.deleteSale(saleToDelete.id, profile.id);
+      toast.success('Sale deleted.');
+      setSaleToDelete(null);
+      await loadPage();
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Unable to delete sale.'));
+    } finally {
+      setIsDeletingSale(false);
+    }
+  };
+
   const handleExportCsv = () => {
     downloadCsv(
       `${company?.name ?? 'sales'}-history.csv`,
       [
-        ['Product', 'Quantity', 'Unit Price', 'Total', 'Seller', 'Timestamp'],
+        ['Product', 'Customer', 'Quantity', 'Unit Price', 'Total', 'Seller', 'Timestamp'],
         ...sales.map((sale) => [
           sale.product?.title ?? 'Unknown product',
+          sale.customerName ?? '',
           sale.quantitySold.toString(),
           sale.sellingPricePerUnit.toString(),
           sale.totalAmount.toString(),
@@ -313,22 +347,35 @@ export default function SalesHistoryPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
+                  <TableHead>Customer</TableHead>
                   <TableHead>Quantity</TableHead>
                   <TableHead>Unit price</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Seller</TableHead>
                   <TableHead>Timestamp</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell>{sale.product?.title ?? 'Unknown product'}</TableCell>
+                    <TableCell>{sale.customerName ?? '—'}</TableCell>
                     <TableCell>{sale.quantitySold}</TableCell>
                     <TableCell>{formatCurrency(sale.sellingPricePerUnit)}</TableCell>
                     <TableCell>{formatCurrency(sale.totalAmount)}</TableCell>
                     <TableCell>{sale.seller?.username ?? 'Unknown seller'}</TableCell>
                     <TableCell>{formatDateTime(sale.createdAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        onClick={() => setSaleToDelete(sale)}
+                        size="icon"
+                        variant="ghost"
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                        <span className="sr-only">Delete sale</span>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -344,6 +391,24 @@ export default function SalesHistoryPage() {
         onOpenChange={setSaleDialogOpen}
         onSubmit={handleRecordSale}
       />
+
+      <AlertDialog onOpenChange={(open) => !open && setSaleToDelete(null)} open={Boolean(saleToDelete)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this sale?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This performs a soft delete and stores who removed the record. Inventory quantity
+              is not restored automatically.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={isDeletingSale} onClick={() => void handleDeleteSale()}>
+              {isDeletingSale ? 'Deleting...' : 'Delete sale'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

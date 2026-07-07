@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { CheckCircle2, Loader2, MoreVertical, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Loader2, MoreVertical, Trash2, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -20,12 +20,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth';
 import { getErrorMessage } from '@/lib/errors';
 import { projectService } from '@/services/projectService';
-import type { Project } from '@/types/domain';
+import type { Project, ProjectFilters } from '@/types/domain';
 
 interface Props {
   companyId: string;
@@ -39,20 +42,23 @@ export function ProjectsTab({ companyId }: Props) {
   const { profile } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [filters, setFilters] = useState<ProjectFilters>({});
   const [projectToComplete, setProjectToComplete] = useState<Project | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await projectService.listProjects(companyId);
+      const data = await projectService.listProjects(companyId, filters);
       setProjects(data);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to load projects.'));
     } finally {
       setIsLoading(false);
     }
-  }, [companyId]);
+  }, [companyId, filters]);
 
   useEffect(() => {
     void loadProjects();
@@ -73,6 +79,21 @@ export function ProjectsTab({ companyId }: Props) {
     }
   };
 
+  const handleDelete = async () => {
+    if (!projectToDelete || !profile) return;
+    setIsDeleting(true);
+    try {
+      await projectService.deleteProject(projectToDelete.id, profile.id);
+      toast.success('Project deleted.');
+      setProjectToDelete(null);
+      await loadProjects();
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete project.'));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <>
       <Card>
@@ -84,6 +105,44 @@ export function ProjectsTab({ companyId }: Props) {
         </CardHeader>
 
         <CardContent>
+          <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:flex-row sm:items-end">
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="projects-from-date">Start date</Label>
+              <Input
+                id="projects-from-date"
+                max={filters.toDate}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    fromDate: event.target.value || undefined,
+                  }))
+                }
+                type="date"
+                value={filters.fromDate ?? ''}
+              />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="projects-to-date">End date</Label>
+              <Input
+                id="projects-to-date"
+                min={filters.fromDate}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    toDate: event.target.value || undefined,
+                  }))
+                }
+                type="date"
+                value={filters.toDate ?? ''}
+              />
+            </div>
+            {filters.fromDate || filters.toDate ? (
+              <Button onClick={() => setFilters({})} variant="ghost">
+                Clear dates
+              </Button>
+            ) : null}
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="size-6 animate-spin text-slate-400" />
@@ -93,9 +152,13 @@ export function ProjectsTab({ companyId }: Props) {
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
                 <TrendingUp className="h-7 w-7 text-slate-400" />
               </div>
-              <p className="font-medium text-slate-700">No projects yet</p>
+              <p className="font-medium text-slate-700">
+                {filters.fromDate || filters.toDate ? 'No matching projects' : 'No projects yet'}
+              </p>
               <p className="mt-1 max-w-xs text-sm text-muted-foreground">
-                Approve a quotation to automatically create a project here.
+                {filters.fromDate || filters.toDate
+                  ? 'No projects were started within the selected date range.'
+                  : 'Approve a quotation to automatically create a project here.'}
               </p>
             </div>
           ) : (
@@ -103,6 +166,7 @@ export function ProjectsTab({ companyId }: Props) {
               {projects.map((project) => (
                 <ProjectCard
                   key={project.id}
+                  onDelete={() => setProjectToDelete(project)}
                   onMarkComplete={() => setProjectToComplete(project)}
                   project={project}
                 />
@@ -147,16 +211,41 @@ export function ProjectsTab({ companyId }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog
+        onOpenChange={(open) => !open && setProjectToDelete(null)}
+        open={Boolean(projectToDelete)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This performs a soft delete and stores who removed the record.{' '}
+              <span className="font-semibold text-slate-900">
+                {projectToDelete?.customerName}
+              </span>{' '}
+              ({projectToDelete?.estId}) will be removed from this list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={isDeleting} onClick={() => void handleDelete()}>
+              {isDeleting ? 'Deleting...' : 'Delete project'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
 
 interface ProjectCardProps {
   project: Project;
+  onDelete: () => void;
   onMarkComplete: () => void;
 }
 
-function ProjectCard({ project, onMarkComplete }: ProjectCardProps) {
+function ProjectCard({ project, onDelete, onMarkComplete }: ProjectCardProps) {
   const isCompleted = project.status === 'completed';
 
   const duration = () => {
@@ -187,15 +276,15 @@ function ProjectCard({ project, onMarkComplete }: ProjectCardProps) {
             </Badge>
           )}
 
-          {!isCompleted ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="size-7" size="sm" variant="ghost">
-                  <MoreVertical className="size-4" />
-                  <span className="sr-only">Project actions</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="size-7" size="sm" variant="ghost">
+                <MoreVertical className="size-4" />
+                <span className="sr-only">Project actions</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!isCompleted ? (
                 <DropdownMenuItem
                   className="text-green-700 focus:text-green-700"
                   onClick={onMarkComplete}
@@ -203,9 +292,14 @@ function ProjectCard({ project, onMarkComplete }: ProjectCardProps) {
                   <CheckCircle2 className="size-4" />
                   Mark as Completed
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : null}
+              ) : null}
+              {!isCompleted ? <DropdownMenuSeparator /> : null}
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={onDelete}>
+                <Trash2 className="size-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

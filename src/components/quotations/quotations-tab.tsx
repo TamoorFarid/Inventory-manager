@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { CheckCircle2, Clock, FileText, MoreVertical, Plus } from 'lucide-react';
+import { CheckCircle2, Clock, FileText, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { ApproveQuotationDialog } from '@/components/quotations/approve-quotation-dialog';
@@ -8,6 +8,16 @@ import { QuotationDetailDialog } from '@/components/quotations/quotation-detail-
 import { QuotationFormDialog } from '@/components/quotations/quotation-form-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { LoadingTable } from '@/components/shared/loading-state';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +25,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
 import { getErrorMessage } from '@/lib/errors';
 import { quotationService } from '@/services/quotationService';
-import type { Quotation, QuotationItem } from '@/types/domain';
+import type { Quotation, QuotationFilters, QuotationItem } from '@/types/domain';
 
 interface Props {
   companyId: string;
@@ -28,9 +42,11 @@ interface Props {
 }
 
 export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }: Props) {
+  const { profile } = useAuth();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [filters, setFilters] = useState<QuotationFilters>({});
 
   // View detail state
   const [detailQuotation, setDetailQuotation] = useState<Quotation | null>(null);
@@ -40,21 +56,49 @@ export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }
   const [approveItems, setApproveItems] = useState<QuotationItem[]>([]);
   const [isLoadingApproveItems, setIsLoadingApproveItems] = useState(false);
 
+  // Edit dialog state
+  const [editQuotation, setEditQuotation] = useState<Quotation | null>(null);
+  const [editItems, setEditItems] = useState<QuotationItem[]>([]);
+  const [loadingEditQuotationId, setLoadingEditQuotationId] = useState<string | null>(null);
+
+  // Delete dialog state
+  const [quotationToDelete, setQuotationToDelete] = useState<Quotation | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   const loadQuotations = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await quotationService.listQuotations(companyId);
+      const data = await quotationService.listQuotations(companyId, filters);
       setQuotations(data);
     } catch (error) {
       toast.error(getErrorMessage(error, 'Failed to load quotations.'));
     } finally {
       setIsLoading(false);
     }
-  }, [companyId]);
+  }, [companyId, filters]);
 
   useEffect(() => {
     void loadQuotations();
   }, [loadQuotations]);
+
+  const handleDeleteQuotation = async () => {
+    if (!quotationToDelete || !profile) {
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await quotationService.deleteQuotation(quotationToDelete.id, profile.id);
+      toast.success('Quotation deleted.');
+      setQuotationToDelete(null);
+      await loadQuotations();
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to delete quotation.'));
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const handleOpenApprove = async (q: Quotation) => {
     setApproveQuotation(q);
@@ -67,6 +111,19 @@ export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }
       setApproveQuotation(null);
     } finally {
       setIsLoadingApproveItems(false);
+    }
+  };
+
+  const handleOpenEdit = async (q: Quotation) => {
+    setLoadingEditQuotationId(q.id);
+    try {
+      const items = await quotationService.getQuotationItems(q.id);
+      setEditItems(items);
+      setEditQuotation(q);
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Failed to load quotation items.'));
+    } finally {
+      setLoadingEditQuotationId(null);
     }
   };
 
@@ -97,15 +154,64 @@ export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }
         </CardHeader>
 
         <CardContent>
+          <div className="mb-4 flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3 sm:flex-row sm:items-end">
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="quotations-from-date">Start date</Label>
+              <Input
+                id="quotations-from-date"
+                max={filters.toDate}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    fromDate: event.target.value || undefined,
+                  }))
+                }
+                type="date"
+                value={filters.fromDate ?? ''}
+              />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <Label htmlFor="quotations-to-date">End date</Label>
+              <Input
+                id="quotations-to-date"
+                min={filters.fromDate}
+                onChange={(event) =>
+                  setFilters((current) => ({
+                    ...current,
+                    toDate: event.target.value || undefined,
+                  }))
+                }
+                type="date"
+                value={filters.toDate ?? ''}
+              />
+            </div>
+            {filters.fromDate || filters.toDate ? (
+              <Button
+                onClick={() => setFilters({})}
+                variant="ghost"
+              >
+                Clear dates
+              </Button>
+            ) : null}
+          </div>
+
           {isLoading ? (
             <LoadingTable />
           ) : quotations.length === 0 ? (
             <EmptyState
-              actionLabel={canCreate ? 'New Quotation' : undefined}
-              description="Create your first customer estimate."
+              actionLabel={canCreate && !filters.fromDate && !filters.toDate ? 'New Quotation' : undefined}
+              description={
+                filters.fromDate || filters.toDate
+                  ? 'No quotations fall within the selected date range.'
+                  : 'Create your first customer estimate.'
+              }
               icon={FileText}
-              onAction={canCreate ? () => setFormOpen(true) : undefined}
-              title="No quotations yet"
+              onAction={
+                canCreate && !filters.fromDate && !filters.toDate
+                  ? () => setFormOpen(true)
+                  : undefined
+              }
+              title={filters.fromDate || filters.toDate ? 'No matching quotations' : 'No quotations yet'}
             />
           ) : (
             <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -185,6 +291,13 @@ export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }
                             <DropdownMenuItem onClick={() => setDetailQuotation(q)}>
                               View
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={loadingEditQuotationId === q.id}
+                              onClick={() => void handleOpenEdit(q)}
+                            >
+                              <Pencil className="size-4" />
+                              Edit
+                            </DropdownMenuItem>
                             {q.status === 'pending' ? (
                               <DropdownMenuItem
                                 className="text-green-700 focus:text-green-700"
@@ -194,6 +307,14 @@ export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }
                                 Mark as Approved
                               </DropdownMenuItem>
                             ) : null}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => setQuotationToDelete(q)}
+                            >
+                              <Trash2 className="size-4" />
+                              Delete
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -208,9 +329,16 @@ export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }
 
       <QuotationFormDialog
         companyId={companyId}
-        isOpen={formOpen}
+        isOpen={formOpen || Boolean(editQuotation)}
         onCreated={() => void loadQuotations()}
-        onOpenChange={setFormOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFormOpen(false);
+            setEditQuotation(null);
+          }
+        }}
+        quotation={editQuotation}
+        quotationItems={editItems}
       />
 
       <QuotationDetailDialog
@@ -226,6 +354,35 @@ export function QuotationsTab({ companyId, canCreate = false, onProjectStarted }
         onProjectStarted={handleProjectStarted}
         quotation={approveQuotation}
       />
+
+      <AlertDialog
+        onOpenChange={(open) => !open && setQuotationToDelete(null)}
+        open={Boolean(quotationToDelete)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this quotation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This performs a soft delete and stores who removed the record.
+              {quotationToDelete ? (
+                <>
+                  {' '}
+                  <span className="font-semibold text-slate-900">
+                    {quotationToDelete.estId}
+                  </span>{' '}
+                  for {quotationToDelete.customerName} will be removed from this list.
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={isDeleting} onClick={() => void handleDeleteQuotation()}>
+              {isDeleting ? 'Deleting...' : 'Delete quotation'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

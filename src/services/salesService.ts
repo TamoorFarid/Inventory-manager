@@ -11,6 +11,7 @@ interface SaleRow {
   company_id: string;
   inventory_item_id: string;
   sold_by: string;
+  customer_name: string | null;
   quantity_sold: number;
   selling_price_per_unit: number;
   total_amount: number;
@@ -26,6 +27,7 @@ function mapSale(row: SaleRow): Sale {
     companyId: row.company_id,
     inventoryItemId: row.inventory_item_id,
     soldBy: row.sold_by,
+    customerName: row.customer_name,
     quantitySold: row.quantity_sold,
     sellingPricePerUnit: Number(row.selling_price_per_unit),
     totalAmount: Number(row.total_amount),
@@ -40,7 +42,7 @@ async function listSales(companyId: string, filters?: SalesFilters) {
   let query = supabase
     .from('sales')
     .select(
-      'id, company_id, inventory_item_id, sold_by, quantity_sold, selling_price_per_unit, total_amount, created_at, updated_at, deleted_at, deleted_by',
+      'id, company_id, inventory_item_id, sold_by, customer_name, quantity_sold, selling_price_per_unit, total_amount, created_at, updated_at, deleted_at, deleted_by',
     )
     .eq('company_id', companyId)
     .is('deleted_at', null)
@@ -92,6 +94,7 @@ async function listSales(companyId: string, filters?: SalesFilters) {
 async function recordSale(input: {
   companyId: string;
   inventoryItemId: string;
+  customerName: string;
   quantitySold: number;
   sellingPricePerUnit: number;
 }) {
@@ -100,7 +103,23 @@ async function recordSale(input: {
     p_inventory_item_id: input.inventoryItemId,
     p_quantity_sold: input.quantitySold,
     p_selling_price_per_unit: input.sellingPricePerUnit,
+    p_customer_name: input.customerName.trim(),
   });
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function deleteSale(saleId: string, userId: string) {
+  const { error } = await supabase
+    .from('sales')
+    .update({
+      deleted_at: new Date().toISOString(),
+      deleted_by: userId,
+      updated_by: userId,
+    })
+    .eq('id', saleId);
 
   if (error) {
     throw error;
@@ -148,6 +167,7 @@ function buildSalesAnalytics(sales: Sale[]): SalesAnalytics {
 
 export const salesService = {
   buildSalesAnalytics,
+  deleteSale,
   listSales,
   recordSale,
 };

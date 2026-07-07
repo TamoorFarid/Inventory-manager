@@ -102,6 +102,9 @@ export default function InventoryPage() {
   const handleSubmit = async (values: {
     title: string;
     description?: string;
+    kwPv?: string;
+    ipRating?: string;
+    warranty?: string;
     maxSellingPrice: number;
     minSellingPrice: number;
     quantity: number;
@@ -336,6 +339,9 @@ export default function InventoryPage() {
             ? {
                 title: editingItem.title,
                 description: editingItem.description ?? '',
+                kwPv: editingItem.kwPv ?? '',
+                ipRating: editingItem.ipRating ?? '',
+                warranty: editingItem.warranty ?? '',
                 maxSellingPrice: editingItem.maxSellingPrice,
                 minSellingPrice: editingItem.minSellingPrice,
                 quantity: editingItem.quantity,

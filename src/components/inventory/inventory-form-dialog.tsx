@@ -26,6 +26,9 @@ interface InventoryFormDialogProps {
 const defaultValues: InventoryValues = {
   title: '',
   description: '',
+  kwPv: '',
+  ipRating: '',
+  warranty: '',
   maxSellingPrice: 0,
   minSellingPrice: 0,
   quantity: 0,
@@ -85,8 +88,31 @@ export function InventoryFormDialog({
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput
+              error={form.formState.errors.kwPv}
+              label="KW/PV"
+              name="kwPv"
+              placeholder="5kW / 400W"
+              register={form.register}
+            />
+            <FormInput
+              error={form.formState.errors.ipRating}
+              label="IP Rating"
+              name="ipRating"
+              placeholder="IP65"
+              register={form.register}
+            />
+          </div>
+          <FormInput
+            error={form.formState.errors.warranty}
+            label="Warranty"
+            name="warranty"
+            placeholder="5 years"
+            register={form.register}
+          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormInput
               error={form.formState.errors.minSellingPrice}
-              label="Minimum selling price"
+              label="Installer price"
               name="minSellingPrice"
               placeholder="25"
               register={form.register}
@@ -94,7 +120,7 @@ export function InventoryFormDialog({
             />
             <FormInput
               error={form.formState.errors.maxSellingPrice}
-              label="Maximum selling price"
+              label="End user price"
               name="maxSellingPrice"
               placeholder="60"
               register={form.register}

@@ -60,6 +60,9 @@ export interface InventoryItem {
   companyId: string;
   title: string;
   description: string | null;
+  kwPv: string | null;
+  ipRating: string | null;
+  warranty: string | null;
   maxSellingPrice: number;
   minSellingPrice: number;
   quantity: number;
@@ -78,6 +81,7 @@ export interface Sale {
   companyId: string;
   inventoryItemId: string;
   soldBy: string;
+  customerName: string | null;
   quantitySold: number;
   sellingPricePerUnit: number;
   totalAmount: number;
@@ -152,6 +156,16 @@ export interface SalesFilters {
   soldBy?: string;
 }
 
+export interface QuotationFilters {
+  fromDate?: string;
+  toDate?: string;
+}
+
+export interface ProjectFilters {
+  fromDate?: string;
+  toDate?: string;
+}
+
 export type QuotationStatus = 'pending' | 'approved';
 
 export interface Quotation {
@@ -200,6 +214,8 @@ export interface Project {
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string;
+  deletedAt: string | null;
+  deletedBy: string | null;
 }
 
 export interface ProjectItem {
