@@ -10,6 +10,7 @@ const LoginPage = lazy(() => import('@/pages/login-page'));
 const CompaniesPage = lazy(() => import('@/pages/companies-page'));
 const CompanyDetailPage = lazy(() => import('@/pages/company-detail-page'));
 const InventoryPage = lazy(() => import('@/pages/inventory-page'));
+const SiteDataPage = lazy(() => import('@/pages/site-data-page'));
 const SalesHistoryPage = lazy(() => import('@/pages/sales-history-page'));
 const NotificationsPage = lazy(() => import('@/pages/notifications-page'));
 const NotFoundPage = lazy(() => import('@/pages/not-found-page'));
@@ -95,6 +96,10 @@ export const router = createBrowserRouter([
           {
             path: '/companies/:companyId/inventory',
             element: withSuspense(<InventoryPage />),
+          },
+          {
+            path: '/site-data',
+            element: withSuspense(<SiteDataPage />),
           },
           {
             path: '/companies/:companyId/sales',

@@ -35,6 +35,15 @@ export function formatRelativeTime(value: string) {
   return formatDistanceToNow(new Date(value), { addSuffix: true });
 }
 
+export function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80);
+}
+
 export function titleCase(value: string) {
   return value
     .split(/[_\s-]+/)

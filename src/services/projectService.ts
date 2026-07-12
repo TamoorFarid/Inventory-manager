@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import type { Project, ProjectFilters, ProjectItem } from '@/types/domain';
+import type { Project, ProjectFilters } from '@/types/domain';
 
 interface ProjectRow {
   id: string;
@@ -23,18 +23,6 @@ interface ProjectRow {
   deleted_by: string | null;
 }
 
-interface ProjectItemRow {
-  id: string;
-  project_id: string;
-  sl_no: number;
-  description: string;
-  quantity: number;
-  sale_price: number;
-  cost_price: number;
-  sale_amount: number;
-  cost_amount: number;
-}
-
 function mapProject(row: ProjectRow): Project {
   return {
     id: row.id,
@@ -56,20 +44,6 @@ function mapProject(row: ProjectRow): Project {
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
     deletedBy: row.deleted_by,
-  };
-}
-
-function mapProjectItem(row: ProjectItemRow): ProjectItem {
-  return {
-    id: row.id,
-    projectId: row.project_id,
-    slNo: row.sl_no,
-    description: row.description,
-    quantity: Number(row.quantity),
-    salePrice: Number(row.sale_price),
-    costPrice: Number(row.cost_price),
-    saleAmount: Number(row.sale_amount),
-    costAmount: Number(row.cost_amount),
   };
 }
 
