@@ -57,6 +57,7 @@ export const DEFAULT_BLOG_IMAGE = placeholderImage('#eafaf1', '#2f9e6f', 'SunPul
 export const DEFAULT_SHOP_IMAGE = placeholderImage('#eafaf1', '#2f9e6f', 'SunPulse Shop');
 export const DEFAULT_PROJECT_IMAGE = placeholderImage('#eafaf1', '#2f9e6f', 'SunPulse Project');
 export const DEFAULT_PARTNER_LOGO = placeholderImage('#f4fbf7', '#69b795', 'Partner');
+export const DEFAULT_BRAND_LOGO = placeholderImage('#f4fbf7', '#69b795', 'Brand');
 
 export const COMPANY_TABS = [
   { label: 'Overview', value: 'overview' },

@@ -51,6 +51,7 @@ interface SiteShopCategoryRow {
 interface SiteShopBrandRow {
   id: string;
   name: string;
+  logo_url: string | null;
   category_id: string;
   sort_order: number;
   created_by: string;
@@ -154,6 +155,7 @@ function mapShopBrand(row: SiteShopBrandRow): SiteShopBrand {
   return {
     id: row.id,
     name: row.name,
+    logoUrl: row.logo_url,
     categoryId: row.category_id,
     sortOrder: row.sort_order,
     createdBy: row.created_by,
@@ -237,7 +239,7 @@ function uniqueSlug(base: string) {
 }
 
 /** Uploads an image to the public site-media bucket and returns its public URL. */
-async function uploadSiteImage(file: File, folder: 'blogs' | 'shop' | 'projects' | 'partners') {
+async function uploadSiteImage(file: File, folder: 'blogs' | 'shop' | 'projects' | 'partners' | 'brands') {
   const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
   const path = `${folder}/${crypto.randomUUID()}.${extension}`;
 
@@ -352,7 +354,7 @@ const SHOP_CATEGORY_COLUMNS =
   'id, name, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
 
 const SHOP_BRAND_COLUMNS =
-  'id, name, category_id, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
+  'id, name, logo_url, category_id, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
 
 async function listShopCategories(): Promise<SiteShopCategory[]> {
   const { data, error } = await supabase
@@ -416,13 +418,14 @@ async function listShopBrands(): Promise<SiteShopBrand[]> {
 }
 
 async function createShopBrand(
-  input: { name: string; categoryId: string; sortOrder: number },
+  input: { name: string; logoUrl: string | null; categoryId: string; sortOrder: number },
   userId: string,
 ): Promise<SiteShopBrand> {
   const { data, error } = await supabase
     .from('site_shop_brands')
     .insert({
       name: input.name.trim(),
+      logo_url: input.logoUrl,
       category_id: input.categoryId,
       sort_order: input.sortOrder,
       created_by: userId,
@@ -437,13 +440,14 @@ async function createShopBrand(
 
 async function updateShopBrand(
   id: string,
-  input: { name: string; categoryId: string; sortOrder: number },
+  input: { name: string; logoUrl: string | null; categoryId: string; sortOrder: number },
   userId: string,
 ): Promise<SiteShopBrand> {
   const { data, error } = await supabase
     .from('site_shop_brands')
     .update({
       name: input.name.trim(),
+      logo_url: input.logoUrl,
       category_id: input.categoryId,
       sort_order: input.sortOrder,
       updated_by: userId,
@@ -700,13 +704,14 @@ async function listPartners(): Promise<SitePartner[]> {
 }
 
 async function createPartner(
-  input: { name: string; isActive: boolean; sortOrder: number },
+  input: { name: string; logoUrl: string | null; isActive: boolean; sortOrder: number },
   userId: string,
 ): Promise<SitePartner> {
   const { data, error } = await supabase
     .from('site_partners')
     .insert({
       name: input.name.trim(),
+      logo_url: input.logoUrl,
       is_active: input.isActive,
       sort_order: input.sortOrder,
       created_by: userId,
@@ -721,13 +726,14 @@ async function createPartner(
 
 async function updatePartner(
   id: string,
-  input: { name: string; isActive: boolean; sortOrder: number },
+  input: { name: string; logoUrl: string | null; isActive: boolean; sortOrder: number },
   userId: string,
 ): Promise<SitePartner> {
   const { data, error } = await supabase
     .from('site_partners')
     .update({
       name: input.name.trim(),
+      logo_url: input.logoUrl,
       is_active: input.isActive,
       sort_order: input.sortOrder,
       updated_by: userId,

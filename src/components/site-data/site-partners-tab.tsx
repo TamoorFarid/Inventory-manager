@@ -23,22 +23,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ImageUploadField } from '@/components/site-data/image-upload-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/hooks/use-auth';
+import { DEFAULT_PARTNER_LOGO } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
 import { siteContentService } from '@/services/siteContentService';
 import type { SitePartner } from '@/types/domain';
 
 interface FormState {
   name: string;
+  logoUrl: string | null;
   isActive: boolean;
   sortOrder: string;
 }
 
 const emptyForm: FormState = {
   name: '',
+  logoUrl: null,
   isActive: true,
   sortOrder: '0',
 };
@@ -78,6 +82,7 @@ export function SitePartnersTab() {
     setEditingPartner(partner);
     setForm({
       name: partner.name,
+      logoUrl: partner.logoUrl,
       isActive: partner.isActive,
       sortOrder: String(partner.sortOrder),
     });
@@ -90,6 +95,7 @@ export function SitePartnersTab() {
     try {
       const payload = {
         name: form.name,
+        logoUrl: form.logoUrl,
         isActive: form.isActive,
         sortOrder: Number(form.sortOrder) || 0,
       };
@@ -129,7 +135,7 @@ export function SitePartnersTab() {
           <div>
             <CardTitle>Official partners</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Names shown as bold, styled text in the scrolling marquee on the SunPulse homepage.
+              Logos shown in the scrolling marquee on the SunPulse homepage.
             </p>
           </div>
           <Button onClick={openCreate}>
@@ -157,7 +163,14 @@ export function SitePartnersTab() {
               {partners.map((partner) => (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" key={partner.id}>
                   <div className="flex items-start justify-between gap-2">
-                    <p className="truncate text-sm font-semibold text-slate-900">{partner.name}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <img
+                        alt={partner.name}
+                        className="size-10 shrink-0 rounded-lg border border-slate-100 object-contain"
+                        src={partner.logoUrl || DEFAULT_PARTNER_LOGO}
+                      />
+                      <p className="truncate text-sm font-semibold text-slate-900">{partner.name}</p>
+                    </div>
                     {partner.isActive ? (
                       <Badge className="shrink-0" variant="success">Active</Badge>
                     ) : (
@@ -184,7 +197,7 @@ export function SitePartnersTab() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingPartner ? 'Edit partner' : 'New partner'}</DialogTitle>
-            <DialogDescription>Shown as styled text in the homepage marquee.</DialogDescription>
+            <DialogDescription>Logo shown in the homepage marquee.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5">
@@ -197,6 +210,14 @@ export function SitePartnersTab() {
                 value={form.name}
               />
             </div>
+
+            <ImageUploadField
+              defaultImage={DEFAULT_PARTNER_LOGO}
+              folder="partners"
+              label="Logo"
+              onChange={(url) => setForm((current) => ({ ...current, logoUrl: url }))}
+              value={form.logoUrl}
+            />
 
             <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
               <div className="space-y-2">

@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ImageUploadField } from '@/components/site-data/image-upload-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -32,17 +33,19 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/hooks/use-auth';
+import { DEFAULT_BRAND_LOGO } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
 import { siteContentService } from '@/services/siteContentService';
 import type { SiteShopBrand, SiteShopCategory } from '@/types/domain';
 
 interface FormState {
   name: string;
+  logoUrl: string | null;
   categoryId: string;
   sortOrder: string;
 }
 
-const emptyForm: FormState = { name: '', categoryId: '', sortOrder: '0' };
+const emptyForm: FormState = { name: '', logoUrl: null, categoryId: '', sortOrder: '0' };
 
 export function ShopBrandsTab() {
   const { profile } = useAuth();
@@ -86,7 +89,12 @@ export function ShopBrandsTab() {
 
   const openEdit = (brand: SiteShopBrand) => {
     setEditingBrand(brand);
-    setForm({ name: brand.name, categoryId: brand.categoryId, sortOrder: String(brand.sortOrder) });
+    setForm({
+      name: brand.name,
+      logoUrl: brand.logoUrl,
+      categoryId: brand.categoryId,
+      sortOrder: String(brand.sortOrder),
+    });
     setDialogOpen(true);
   };
 
@@ -96,6 +104,7 @@ export function ShopBrandsTab() {
     try {
       const payload = {
         name: form.name,
+        logoUrl: form.logoUrl,
         categoryId: form.categoryId,
         sortOrder: Number(form.sortOrder) || 0,
       };
@@ -172,9 +181,16 @@ export function ShopBrandsTab() {
               {brands.map((brand) => (
                 <div className="rounded-2xl border border-slate-200 bg-white p-4" key={brand.id}>
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-slate-900">{brand.name}</p>
-                      <p className="text-xs text-muted-foreground">{categoryName(brand.categoryId)}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <img
+                        alt={brand.name}
+                        className="size-10 shrink-0 rounded-lg border border-slate-100 object-contain"
+                        src={brand.logoUrl || DEFAULT_BRAND_LOGO}
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-slate-900">{brand.name}</p>
+                        <p className="text-xs text-muted-foreground">{categoryName(brand.categoryId)}</p>
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <Button onClick={() => openEdit(brand)} size="sm" variant="ghost">
@@ -209,6 +225,13 @@ export function ShopBrandsTab() {
                 value={form.name}
               />
             </div>
+            <ImageUploadField
+              defaultImage={DEFAULT_BRAND_LOGO}
+              folder="brands"
+              label="Logo"
+              onChange={(url) => setForm((current) => ({ ...current, logoUrl: url }))}
+              value={form.logoUrl}
+            />
             <div className="space-y-2">
               <Label htmlFor="brand-category">Category</Label>
               <Select

@@ -11,7 +11,7 @@ interface ImageUploadFieldProps {
   label: string;
   value: string | null;
   defaultImage: string;
-  folder: 'blogs' | 'shop' | 'projects' | 'partners';
+  folder: 'blogs' | 'shop' | 'projects' | 'partners' | 'brands';
   onChange: (url: string | null) => void;
 }
 

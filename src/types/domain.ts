@@ -268,6 +268,7 @@ export interface SiteShopCategory {
 export interface SiteShopBrand {
   id: string;
   name: string;
+  logoUrl: string | null;
   categoryId: string;
   sortOrder: number;
   createdBy: string;
