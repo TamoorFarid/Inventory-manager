@@ -338,6 +338,19 @@ export interface SitePartner {
   deletedAt: string | null;
 }
 
+export interface SiteHomeSlide {
+  id: string;
+  imageUrl: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdBy: string;
+  updatedBy: string | null;
+  deletedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt: string | null;
+}
+
 export interface SiteQuotation {
   id: string;
   quoteNumber: string;

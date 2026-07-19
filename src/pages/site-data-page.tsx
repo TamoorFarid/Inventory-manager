@@ -1,4 +1,5 @@
 import { BlogPostsTab } from '@/components/site-data/blog-posts-tab';
+import { HomeSliderTab } from '@/components/site-data/home-slider-tab';
 import { ShopBrandsTab } from '@/components/site-data/shop-brands-tab';
 import { ShopCategoriesTab } from '@/components/site-data/shop-categories-tab';
 import { ShopItemsTab } from '@/components/site-data/shop-items-tab';
@@ -48,6 +49,9 @@ export default function SiteDataPage() {
         </TabsContent>
         <TabsContent value="partners">
           <SitePartnersTab />
+        </TabsContent>
+        <TabsContent value="home-slider">
+          <HomeSliderTab />
         </TabsContent>
         <TabsContent value="settings">
           <SiteSettingsTab />

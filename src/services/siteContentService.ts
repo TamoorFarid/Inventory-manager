@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import type {
   ProjectType,
   SiteBlogPost,
+  SiteHomeSlide,
   SitePartner,
   SiteProject,
   SiteQuotation,
@@ -107,6 +108,19 @@ interface SitePartnerRow {
   name: string;
   logo_url: string | null;
   website_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_by: string;
+  updated_by: string | null;
+  deleted_by: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface SiteHomeSlideRow {
+  id: string;
+  image_url: string;
   sort_order: number;
   is_active: boolean;
   created_by: string;
@@ -228,6 +242,21 @@ function mapPartner(row: SitePartnerRow): SitePartner {
   };
 }
 
+function mapHomeSlide(row: SiteHomeSlideRow): SiteHomeSlide {
+  return {
+    id: row.id,
+    imageUrl: row.image_url,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    createdBy: row.created_by,
+    updatedBy: row.updated_by,
+    deletedBy: row.deleted_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+  };
+}
+
 function isUniqueViolation(error: unknown): boolean {
   return Boolean(error && typeof error === 'object' && 'code' in error && error.code === UNIQUE_VIOLATION);
 }
@@ -239,7 +268,10 @@ function uniqueSlug(base: string) {
 }
 
 /** Uploads an image to the public site-media bucket and returns its public URL. */
-async function uploadSiteImage(file: File, folder: 'blogs' | 'shop' | 'projects' | 'partners' | 'brands') {
+async function uploadSiteImage(
+  file: File,
+  folder: 'blogs' | 'shop' | 'projects' | 'partners' | 'brands' | 'home-slides',
+) {
   const extension = file.name.includes('.') ? file.name.split('.').pop() : 'jpg';
   const path = `${folder}/${crypto.randomUUID()}.${extension}`;
 
@@ -755,6 +787,71 @@ async function deletePartner(id: string, userId: string) {
   if (error) throw error;
 }
 
+const HOME_SLIDE_COLUMNS =
+  'id, image_url, sort_order, is_active, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
+
+async function listHomeSlides(): Promise<SiteHomeSlide[]> {
+  const { data, error } = await supabase
+    .from('site_home_slides')
+    .select(HOME_SLIDE_COLUMNS)
+    .is('deleted_at', null)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((row) => mapHomeSlide(row as SiteHomeSlideRow));
+}
+
+async function createHomeSlide(
+  input: { imageUrl: string; isActive: boolean; sortOrder: number },
+  userId: string,
+): Promise<SiteHomeSlide> {
+  const { data, error } = await supabase
+    .from('site_home_slides')
+    .insert({
+      image_url: input.imageUrl,
+      is_active: input.isActive,
+      sort_order: input.sortOrder,
+      created_by: userId,
+      updated_by: userId,
+    })
+    .select(HOME_SLIDE_COLUMNS)
+    .single();
+
+  if (error) throw error;
+  return mapHomeSlide(data as SiteHomeSlideRow);
+}
+
+async function updateHomeSlide(
+  id: string,
+  input: { imageUrl: string; isActive: boolean; sortOrder: number },
+  userId: string,
+): Promise<SiteHomeSlide> {
+  const { data, error } = await supabase
+    .from('site_home_slides')
+    .update({
+      image_url: input.imageUrl,
+      is_active: input.isActive,
+      sort_order: input.sortOrder,
+      updated_by: userId,
+    })
+    .eq('id', id)
+    .select(HOME_SLIDE_COLUMNS)
+    .single();
+
+  if (error) throw error;
+  return mapHomeSlide(data as SiteHomeSlideRow);
+}
+
+async function deleteHomeSlide(id: string, userId: string) {
+  const { error } = await supabase
+    .from('site_home_slides')
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId, updated_by: userId })
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
 async function getSettings(): Promise<SiteSettings> {
   const { data, error } = await supabase.from('site_settings').select('key, value');
 
@@ -1028,6 +1125,10 @@ export const siteContentService = {
   createPartner,
   updatePartner,
   deletePartner,
+  listHomeSlides,
+  createHomeSlide,
+  updateHomeSlide,
+  deleteHomeSlide,
   listSiteQuotations,
   createSiteQuotation,
   updateSiteQuotation,

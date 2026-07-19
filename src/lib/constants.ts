@@ -43,8 +43,14 @@ export const SITE_DATA_TABS = [
   { label: 'Projects', value: 'projects' },
   { label: 'Quotations', value: 'quotations' },
   { label: 'Partners', value: 'partners' },
+  { label: 'Home Slider', value: 'home-slider' },
   { label: 'Settings', value: 'settings' },
 ];
+
+// The hero's image column renders at roughly this shape across breakpoints
+// (near-square on desktop, wider on mobile) — 4:3 sits in the middle of that
+// range so object-cover cropping stays modest at either end.
+export const HOME_SLIDE_ASPECT_RATIO = { width: 4, height: 3 } as const;
 
 export const PROJECT_TYPES = ['OnGrid', 'Hybrid'] as const;
 
@@ -58,6 +64,7 @@ export const DEFAULT_SHOP_IMAGE = placeholderImage('#eafaf1', '#2f9e6f', 'SunPul
 export const DEFAULT_PROJECT_IMAGE = placeholderImage('#eafaf1', '#2f9e6f', 'SunPulse Project');
 export const DEFAULT_PARTNER_LOGO = placeholderImage('#f4fbf7', '#69b795', 'Partner');
 export const DEFAULT_BRAND_LOGO = placeholderImage('#f4fbf7', '#69b795', 'Brand');
+export const DEFAULT_HOME_SLIDE_IMAGE = placeholderImage('#eafaf1', '#2f9e6f', 'SunPulse Slide');
 
 export const COMPANY_TABS = [
   { label: 'Overview', value: 'overview' },
