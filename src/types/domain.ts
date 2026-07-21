@@ -234,6 +234,13 @@ export interface ProjectItem {
 // Public website content ("Site Data")
 // ---------------------------------------------------------------------------
 
+export type SiteMediaType = 'image' | 'video';
+
+export interface SiteMediaItem {
+  url: string;
+  type: SiteMediaType;
+}
+
 export interface SiteBlogPost {
   id: string;
   title: string;
@@ -241,6 +248,7 @@ export interface SiteBlogPost {
   excerpt: string | null;
   content: string;
   coverImageUrl: string | null;
+  coverMediaType: SiteMediaType;
   authorName: string | null;
   isPublished: boolean;
   publishedAt: string;
@@ -287,6 +295,7 @@ export interface SiteShopItem {
   price: number;
   currency: string;
   imageUrl: string | null;
+  media: SiteMediaItem[];
   categoryId: string | null;
   brandId: string | null;
   isAvailable: boolean;
@@ -311,6 +320,7 @@ export interface SiteProject {
   location: string | null;
   capacityKw: number | null;
   imageUrl: string | null;
+  media: SiteMediaItem[];
   completedOn: string | null;
   projectType: ProjectType;
   isPublished: boolean;

@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { FileText, Loader2, Pencil, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { ImageUploadField } from '@/components/site-data/image-upload-field';
 import { RichTextEditor } from '@/components/site-data/rich-text-editor';
+import { SingleMediaUploadField } from '@/components/site-data/single-media-upload-field';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,13 +34,14 @@ import { DEFAULT_BLOG_IMAGE } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
 import { formatDate } from '@/lib/utils';
 import { siteContentService } from '@/services/siteContentService';
-import type { SiteBlogPost } from '@/types/domain';
+import type { SiteBlogPost, SiteMediaType } from '@/types/domain';
 
 interface FormState {
   title: string;
   excerpt: string;
   content: string;
   coverImageUrl: string | null;
+  coverMediaType: SiteMediaType;
   authorName: string;
   isPublished: boolean;
 }
@@ -50,6 +51,7 @@ const emptyForm: FormState = {
   excerpt: '',
   content: '',
   coverImageUrl: null,
+  coverMediaType: 'image',
   authorName: '',
   isPublished: true,
 };
@@ -92,6 +94,7 @@ export function BlogPostsTab() {
       excerpt: post.excerpt ?? '',
       content: post.content,
       coverImageUrl: post.coverImageUrl,
+      coverMediaType: post.coverMediaType,
       authorName: post.authorName ?? '',
       isPublished: post.isPublished,
     });
@@ -164,11 +167,15 @@ export function BlogPostsTab() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {posts.map((post) => (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" key={post.id}>
-                  <img
-                    alt={post.title}
-                    className="h-36 w-full object-cover"
-                    src={post.coverImageUrl || DEFAULT_BLOG_IMAGE}
-                  />
+                  {post.coverImageUrl && post.coverMediaType === 'video' ? (
+                    <video className="h-36 w-full object-cover" muted src={post.coverImageUrl} />
+                  ) : (
+                    <img
+                      alt={post.title}
+                      className="h-36 w-full object-cover"
+                      src={post.coverImageUrl || DEFAULT_BLOG_IMAGE}
+                    />
+                  )}
                   <div className="space-y-2 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <p className="truncate font-semibold text-slate-900">{post.title}</p>
@@ -231,11 +238,14 @@ export function BlogPostsTab() {
               />
             </div>
 
-            <ImageUploadField
+            <SingleMediaUploadField
               defaultImage={DEFAULT_BLOG_IMAGE}
               folder="blogs"
-              label="Cover image"
-              onChange={(url) => setForm((current) => ({ ...current, coverImageUrl: url }))}
+              label="Cover image or video"
+              mediaType={form.coverMediaType}
+              onChange={(media) =>
+                setForm((current) => ({ ...current, coverImageUrl: media.url, coverMediaType: media.type }))
+              }
               value={form.coverImageUrl}
             />
 

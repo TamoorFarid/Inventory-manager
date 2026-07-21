@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { ImageUploadField } from '@/components/site-data/image-upload-field';
+import { MultiMediaUploadField } from '@/components/site-data/multi-media-upload-field';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,14 +39,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { DEFAULT_SHOP_IMAGE } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
 import { siteContentService } from '@/services/siteContentService';
-import type { SiteShopBrand, SiteShopCategory, SiteShopItem } from '@/types/domain';
+import type { SiteMediaItem, SiteShopBrand, SiteShopCategory, SiteShopItem } from '@/types/domain';
 
 interface FormState {
   name: string;
   description: string;
   price: string;
   currency: string;
-  imageUrl: string | null;
+  media: SiteMediaItem[];
   categoryId: string;
   brandId: string;
   isAvailable: boolean;
@@ -58,7 +58,7 @@ const emptyForm: FormState = {
   description: '',
   price: '0',
   currency: 'PKR',
-  imageUrl: null,
+  media: [],
   categoryId: '',
   brandId: '',
   isAvailable: true,
@@ -117,7 +117,7 @@ export function ShopItemsTab() {
       description: item.description ?? '',
       price: String(item.price),
       currency: item.currency,
-      imageUrl: item.imageUrl,
+      media: item.media,
       categoryId: item.categoryId ?? '',
       brandId: item.brandId ?? '',
       isAvailable: item.isAvailable,
@@ -146,7 +146,7 @@ export function ShopItemsTab() {
         description: form.description,
         price: Number(form.price) || 0,
         currency: form.currency || 'PKR',
-        imageUrl: form.imageUrl,
+        media: form.media,
         categoryId: form.categoryId || null,
         brandId: form.brandId || null,
         isAvailable: form.isAvailable,
@@ -215,7 +215,11 @@ export function ShopItemsTab() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {items.map((item) => (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" key={item.id}>
-                  <img alt={item.name} className="h-36 w-full object-cover" src={item.imageUrl || DEFAULT_SHOP_IMAGE} />
+                  {item.media[0]?.type === 'video' ? (
+                    <video className="h-36 w-full object-cover" muted src={item.media[0].url} />
+                  ) : (
+                    <img alt={item.name} className="h-36 w-full object-cover" src={item.imageUrl || DEFAULT_SHOP_IMAGE} />
+                  )}
                   <div className="space-y-2 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <p className="truncate font-semibold text-slate-900">{item.name}</p>
@@ -280,12 +284,11 @@ export function ShopItemsTab() {
               />
             </div>
 
-            <ImageUploadField
-              defaultImage={DEFAULT_SHOP_IMAGE}
+            <MultiMediaUploadField
               folder="shop"
-              label="Product image"
-              onChange={(url) => setForm((current) => ({ ...current, imageUrl: url }))}
-              value={form.imageUrl}
+              label="Product photos & videos"
+              onChange={(media) => setForm((current) => ({ ...current, media }))}
+              value={form.media}
             />
 
             <div className="grid gap-4 sm:grid-cols-2">

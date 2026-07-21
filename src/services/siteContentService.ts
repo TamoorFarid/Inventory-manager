@@ -4,6 +4,8 @@ import type {
   ProjectType,
   SiteBlogPost,
   SiteHomeSlide,
+  SiteMediaItem,
+  SiteMediaType,
   SitePartner,
   SiteProject,
   SiteQuotation,
@@ -26,6 +28,7 @@ interface SiteBlogPostRow {
   excerpt: string | null;
   content: string;
   cover_image_url: string | null;
+  cover_media_type: SiteMediaType;
   author_name: string | null;
   is_published: boolean;
   published_at: string;
@@ -71,6 +74,7 @@ interface SiteShopItemRow {
   price: number;
   currency: string;
   image_url: string | null;
+  media: SiteMediaItem[];
   category_id: string | null;
   brand_id: string | null;
   is_available: boolean;
@@ -91,6 +95,7 @@ interface SiteProjectRow {
   location: string | null;
   capacity_kw: number | null;
   image_url: string | null;
+  media: SiteMediaItem[];
   completed_on: string | null;
   project_type: 'OnGrid' | 'Hybrid';
   is_published: boolean;
@@ -139,6 +144,7 @@ function mapBlogPost(row: SiteBlogPostRow): SiteBlogPost {
     excerpt: row.excerpt,
     content: row.content,
     coverImageUrl: row.cover_image_url,
+    coverMediaType: row.cover_media_type,
     authorName: row.author_name,
     isPublished: row.is_published,
     publishedAt: row.published_at,
@@ -190,6 +196,7 @@ function mapShopItem(row: SiteShopItemRow): SiteShopItem {
     price: Number(row.price),
     currency: row.currency,
     imageUrl: row.image_url,
+    media: row.media ?? [],
     categoryId: row.category_id,
     brandId: row.brand_id,
     isAvailable: row.is_available,
@@ -212,6 +219,7 @@ function mapProject(row: SiteProjectRow): SiteProject {
     location: row.location,
     capacityKw: row.capacity_kw === null ? null : Number(row.capacity_kw),
     imageUrl: row.image_url,
+    media: row.media ?? [],
     completedOn: row.completed_on,
     projectType: row.project_type,
     isPublished: row.is_published,
@@ -286,8 +294,18 @@ async function uploadSiteImage(
   return data.publicUrl;
 }
 
+/** Uploads an image or video to the public site-media bucket and returns its public URL and media type. */
+async function uploadSiteMedia(
+  file: File,
+  folder: 'blogs' | 'shop' | 'projects' | 'partners' | 'brands' | 'home-slides',
+): Promise<SiteMediaItem> {
+  const url = await uploadSiteImage(file, folder);
+  const type: SiteMediaType = file.type.startsWith('video/') ? 'video' : 'image';
+  return { url, type };
+}
+
 const BLOG_COLUMNS =
-  'id, title, slug, excerpt, content, cover_image_url, author_name, is_published, published_at, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
+  'id, title, slug, excerpt, content, cover_image_url, cover_media_type, author_name, is_published, published_at, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
 
 async function listBlogPosts(): Promise<SiteBlogPost[]> {
   const { data, error } = await supabase
@@ -306,6 +324,7 @@ async function createBlogPost(
     excerpt?: string | null;
     content: string;
     coverImageUrl?: string | null;
+    coverMediaType?: SiteMediaType;
     authorName?: string | null;
     isPublished: boolean;
   },
@@ -323,6 +342,7 @@ async function createBlogPost(
         excerpt: input.excerpt?.trim() || null,
         content: input.content,
         cover_image_url: input.coverImageUrl || null,
+        cover_media_type: input.coverImageUrl ? input.coverMediaType ?? 'image' : 'image',
         author_name: input.authorName?.trim() || null,
         is_published: input.isPublished,
         created_by: userId,
@@ -346,6 +366,7 @@ async function updateBlogPost(
     excerpt?: string | null;
     content: string;
     coverImageUrl?: string | null;
+    coverMediaType?: SiteMediaType;
     authorName?: string | null;
     isPublished: boolean;
   },
@@ -358,6 +379,7 @@ async function updateBlogPost(
       excerpt: input.excerpt?.trim() || null,
       content: input.content,
       cover_image_url: input.coverImageUrl || null,
+      cover_media_type: input.coverImageUrl ? input.coverMediaType ?? 'image' : 'image',
       author_name: input.authorName?.trim() || null,
       is_published: input.isPublished,
       updated_by: userId,
@@ -380,7 +402,7 @@ async function deleteBlogPost(id: string, userId: string) {
 }
 
 const SHOP_COLUMNS =
-  'id, name, slug, description, price, currency, image_url, category_id, brand_id, is_available, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
+  'id, name, slug, description, price, currency, image_url, media, category_id, brand_id, is_available, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
 
 const SHOP_CATEGORY_COLUMNS =
   'id, name, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
@@ -529,7 +551,7 @@ async function createShopItem(
     description?: string | null;
     price: number;
     currency: string;
-    imageUrl?: string | null;
+    media?: SiteMediaItem[];
     categoryId?: string | null;
     brandId?: string | null;
     isAvailable: boolean;
@@ -538,6 +560,7 @@ async function createShopItem(
   userId: string,
 ): Promise<SiteShopItem> {
   let attempt = 0;
+  const media = input.media ?? [];
 
   while (attempt < 3) {
     const slug = uniqueSlug(input.name);
@@ -549,7 +572,8 @@ async function createShopItem(
         description: input.description?.trim() || null,
         price: input.price,
         currency: input.currency,
-        image_url: input.imageUrl || null,
+        image_url: media[0]?.url ?? null,
+        media,
         category_id: input.categoryId || null,
         brand_id: input.brandId || null,
         is_available: input.isAvailable,
@@ -575,7 +599,7 @@ async function updateShopItem(
     description?: string | null;
     price: number;
     currency: string;
-    imageUrl?: string | null;
+    media?: SiteMediaItem[];
     categoryId?: string | null;
     brandId?: string | null;
     isAvailable: boolean;
@@ -583,6 +607,7 @@ async function updateShopItem(
   },
   userId: string,
 ): Promise<SiteShopItem> {
+  const media = input.media ?? [];
   const { data, error } = await supabase
     .from('site_shop_items')
     .update({
@@ -590,7 +615,8 @@ async function updateShopItem(
       description: input.description?.trim() || null,
       price: input.price,
       currency: input.currency,
-      image_url: input.imageUrl || null,
+      image_url: media[0]?.url ?? null,
+      media,
       category_id: input.categoryId || null,
       brand_id: input.brandId || null,
       is_available: input.isAvailable,
@@ -615,7 +641,7 @@ async function deleteShopItem(id: string, userId: string) {
 }
 
 const PROJECT_COLUMNS =
-  'id, title, slug, description, location, capacity_kw, image_url, completed_on, project_type, is_published, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
+  'id, title, slug, description, location, capacity_kw, image_url, media, completed_on, project_type, is_published, sort_order, created_by, updated_by, deleted_by, created_at, updated_at, deleted_at';
 
 async function listSiteProjects(): Promise<SiteProject[]> {
   const { data, error } = await supabase
@@ -635,7 +661,7 @@ async function createSiteProject(
     description?: string | null;
     location?: string | null;
     capacityKw?: number | null;
-    imageUrl?: string | null;
+    media?: SiteMediaItem[];
     completedOn?: string | null;
     projectType: ProjectType;
     isPublished: boolean;
@@ -644,6 +670,7 @@ async function createSiteProject(
   userId: string,
 ): Promise<SiteProject> {
   let attempt = 0;
+  const media = input.media ?? [];
 
   while (attempt < 3) {
     const slug = uniqueSlug(input.title);
@@ -655,7 +682,8 @@ async function createSiteProject(
         description: input.description?.trim() || null,
         location: input.location?.trim() || null,
         capacity_kw: input.capacityKw ?? null,
-        image_url: input.imageUrl || null,
+        image_url: media[0]?.url ?? null,
+        media,
         completed_on: input.completedOn || null,
         project_type: input.projectType,
         is_published: input.isPublished,
@@ -681,7 +709,7 @@ async function updateSiteProject(
     description?: string | null;
     location?: string | null;
     capacityKw?: number | null;
-    imageUrl?: string | null;
+    media?: SiteMediaItem[];
     completedOn?: string | null;
     projectType: ProjectType;
     isPublished: boolean;
@@ -689,6 +717,7 @@ async function updateSiteProject(
   },
   userId: string,
 ): Promise<SiteProject> {
+  const media = input.media ?? [];
   const { data, error } = await supabase
     .from('site_projects')
     .update({
@@ -696,7 +725,8 @@ async function updateSiteProject(
       description: input.description?.trim() || null,
       location: input.location?.trim() || null,
       capacity_kw: input.capacityKw ?? null,
-      image_url: input.imageUrl || null,
+      image_url: media[0]?.url ?? null,
+      media,
       completed_on: input.completedOn || null,
       project_type: input.projectType,
       is_published: input.isPublished,
@@ -1101,6 +1131,7 @@ async function deleteSiteQuotation(id: string, userId: string) {
 
 export const siteContentService = {
   uploadSiteImage,
+  uploadSiteMedia,
   listBlogPosts,
   createBlogPost,
   updateBlogPost,

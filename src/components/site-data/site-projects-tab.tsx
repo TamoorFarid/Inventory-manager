@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Loader2, MapPin, Pencil, Plus, Sun, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { ImageUploadField } from '@/components/site-data/image-upload-field';
+import { MultiMediaUploadField } from '@/components/site-data/multi-media-upload-field';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,14 +39,14 @@ import { useAuth } from '@/hooks/use-auth';
 import { DEFAULT_PROJECT_IMAGE, PROJECT_TYPES } from '@/lib/constants';
 import { getErrorMessage } from '@/lib/errors';
 import { siteContentService } from '@/services/siteContentService';
-import type { ProjectType, SiteProject } from '@/types/domain';
+import type { ProjectType, SiteMediaItem, SiteProject } from '@/types/domain';
 
 interface FormState {
   title: string;
   description: string;
   location: string;
   capacityKw: string;
-  imageUrl: string | null;
+  media: SiteMediaItem[];
   completedOn: string;
   projectType: ProjectType;
   isPublished: boolean;
@@ -58,7 +58,7 @@ const emptyForm: FormState = {
   description: '',
   location: '',
   capacityKw: '',
-  imageUrl: null,
+  media: [],
   completedOn: '',
   projectType: 'OnGrid',
   isPublished: true,
@@ -103,7 +103,7 @@ export function SiteProjectsTab() {
       description: project.description ?? '',
       location: project.location ?? '',
       capacityKw: project.capacityKw ? String(project.capacityKw) : '',
-      imageUrl: project.imageUrl,
+      media: project.media,
       completedOn: project.completedOn ?? '',
       projectType: project.projectType,
       isPublished: project.isPublished,
@@ -121,7 +121,7 @@ export function SiteProjectsTab() {
         description: form.description,
         location: form.location,
         capacityKw: form.capacityKw ? Number(form.capacityKw) : null,
-        imageUrl: form.imageUrl,
+        media: form.media,
         completedOn: form.completedOn || null,
         projectType: form.projectType,
         isPublished: form.isPublished,
@@ -190,11 +190,15 @@ export function SiteProjectsTab() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {projects.map((project) => (
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" key={project.id}>
-                  <img
-                    alt={project.title}
-                    className="h-36 w-full object-cover"
-                    src={project.imageUrl || DEFAULT_PROJECT_IMAGE}
-                  />
+                  {project.media[0]?.type === 'video' ? (
+                    <video className="h-36 w-full object-cover" muted src={project.media[0].url} />
+                  ) : (
+                    <img
+                      alt={project.title}
+                      className="h-36 w-full object-cover"
+                      src={project.imageUrl || DEFAULT_PROJECT_IMAGE}
+                    />
+                  )}
                   <div className="space-y-2 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <p className="truncate font-semibold text-slate-900">{project.title}</p>
@@ -259,12 +263,11 @@ export function SiteProjectsTab() {
               />
             </div>
 
-            <ImageUploadField
-              defaultImage={DEFAULT_PROJECT_IMAGE}
+            <MultiMediaUploadField
               folder="projects"
-              label="Project photo"
-              onChange={(url) => setForm((current) => ({ ...current, imageUrl: url }))}
-              value={form.imageUrl}
+              label="Project photos & videos"
+              onChange={(media) => setForm((current) => ({ ...current, media }))}
+              value={form.media}
             />
 
             <div className="space-y-2">
